@@ -400,8 +400,63 @@ async function loadRemoteData() {
         console.warn('Không tải được ' + PRICES_URL, e);
     }
 }
+// Hàm lấy thẻ bài TCG chuẩn từ TCGDex API
+// Hàm nạp lá bài Pokémon TCG chuẩn từ TCGDex API
+// Hàm lấy thẻ bài TCG CHUẨN từ TCGDex API (Có khung bài, thông số đầy đủ)
+// Hàm nạp danh sách lá bài Pokémon TCG chuẩn từ TCGDex (Tải số lượng lớn / Full)
+async function fetchPokemonCards(limit = 1000) { // Bạn có thể chỉnh 1000, 2000 hoặc đổi limit = null để lấy TOÀN BỘ
+    try {
+        console.log(`Đang tiến hành đồng bộ dữ liệu TCGDex...`);
+        
+        // Sử dụng CORS Proxy để vượt qua rào cản bảo mật của trình duyệt
+        const proxyUrl = 'https://corsproxy.io/?';
+        const targetUrl = 'https://api.tcgdex.net/v2/en/cards';
+        
+        const res = await fetch(proxyUrl + encodeURIComponent(targetUrl));
+        if (!res.ok) throw new Error('Không thể kết nối TCGDex API');
+        
+        const allCards = await res.json();
+        console.log(`Tổng số lá bài tìm thấy trên TCGDex: ${allCards.length} thẻ.`);
 
-function init() {
+        // Chọn số lượng thẻ muốn nạp (nếu limit = null hoặc undefined thì sẽ lấy toàn bộ allCards)
+        const selectedList = limit ? allCards.slice(0, limit) : allCards;
+
+        const pokemonCards = selectedList.map(item => {
+            // Tách set ID và local ID để ghép link ảnh TCG full khung viền chuẩn từ CDN
+            const parts = item.id.split('-');
+            const setCode = parts[0] || 'card';
+            const localId = parts.slice(1).join('-') || item.localId || '1';
+            
+            // Link ảnh lá bài TCG chuẩn high-quality của TCGDex
+            const imageUrl = `https://assets.tcgdex.net/en/${setCode}/${localId}/high.png`;
+
+            return {
+                code: item.id,
+                cardCode: item.localId || item.id,
+                name: item.name,
+                set: 'pokemon',
+                setName: `Pokémon TCG (${setCode.toUpperCase()})`,
+                setCode: setCode.toUpperCase(),
+                rarity: 'TCG Card',
+                type: 'Pokémon Card',
+                domain: 'COLORLESS',
+                might: 0,
+                hp: 0,
+                image: imageUrl,
+                artist: 'Pokémon TCG',
+                ability: `Card ID: ${item.id}`
+            };
+        });
+
+        console.log(`✅ Đã nạp thành công ${pokemonCards.length} lá bài TCG chuẩn!`);
+        return pokemonCards;
+
+    } catch (error) {
+        console.error("Lỗi khi kết nối TCGDex API:", error);
+        return [];
+    }
+}
+async function init() {
     try {
         const savedCards = localStorage.getItem('riftbound_cards');
         if (savedCards) loadCards(JSON.parse(savedCards));
@@ -417,15 +472,30 @@ function init() {
         prices = {};
     }
 
-    // Nút import chỉ dành cho bạn (admin): mở trang với ?admin ở cuối địa chỉ
     if (!new URLSearchParams(location.search).has('admin')) {
         ['#importButton', '#importPrices', '#emptyImport'].forEach(sel => {
-            $(sel).style.display = 'none';
+            const el = $(sel);
+            if (el) el.style.display = 'none';
         });
     }
 
-    loadRemoteData();
+    // 1. Tải dữ liệu remote local hiện tại
+    await loadRemoteData();
 
+   cards = cards.filter(c => c.set !== 'pokemon' && c.setCode !== 'POKEMON');
+
+    // 3. Tải 1.000 lá bài TCGDex (hoặc đổi fetchPokemonCards(null) để tải TẤT CẢ 20.000+ thẻ)
+    try {
+        const pokemonCards = await fetchPokemonCards(1000); 
+        if (pokemonCards.length > 0) {
+            cards = [...cards, ...pokemonCards];
+            if (typeof buildFilters === 'function') buildFilters();
+            render();
+        }
+    } catch (err) {
+        console.error("Lỗi tải TCGDex:", err);
+    }
+    // Các sự kiện DOM bên dưới giữ nguyên...
     $('#importButton').onclick = () => $('#jsonFile').click();
     $('#emptyImport').onclick = () => $('#jsonFile').click();
 
@@ -454,10 +524,13 @@ function init() {
         '#typeFilter',
         '#sortFilter'
     ].forEach(selector => {
-        $(selector).addEventListener('input', () => {
-            page = 1;
-            render();
-        });
+        const el = $(selector);
+        if (el) {
+            el.addEventListener('input', () => {
+                page = 1;
+                render();
+            });
+        }
     });
 
     $('#resetFilters').onclick = () => {
@@ -467,9 +540,11 @@ function init() {
             '#rarityFilter',
             '#domainFilter',
             '#typeFilter'
-        ].forEach(s => $(s).value = 'all');
+        ].forEach(s => {
+            if ($(s)) $(s).value = 'all';
+        });
 
-        $('#sortFilter').value = 'name';
+        if ($('#sortFilter')) $('#sortFilter').value = 'name';
         page = 1;
         render();
     };
@@ -595,3 +670,5 @@ document.addEventListener('DOMContentLoaded', init);
     const target = document.getElementById('detailContent');
     if (target) new MutationObserver(wrapImages).observe(target, { childList: true });
 })();
+
+
