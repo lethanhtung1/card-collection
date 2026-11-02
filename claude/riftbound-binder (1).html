@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Binder TCG</title>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;800&family=Lilita+One&display=swap" rel="stylesheet">
+<!-- CSS -->
+  <link rel="stylesheet" href="style.css">  
+  <!-- JavaScript -->
+  <script src="script.js" defer></script>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="foilN" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".012 .07" numOctaves="3" seed="7"/><feColorMatrix type="matrix" values="1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 0 0 0 0 1"/><feComponentTransfer><feFuncR type="linear" slope="2.6" intercept="-.8"/><feFuncG type="linear" slope="2.6" intercept="-.8"/><feFuncB type="linear" slope="2.6" intercept="-.8"/></feComponentTransfer></filter></svg>
+<header><h1>Binder TCG</h1><div class="coins" id="coins"></div></header>
+<div class="load" id="load" hidden>
+  <h2>Nạp dữ liệu thẻ</h2>
+  <p>Chọn file <b>cards.json</b> của Riftbound. Lần sau trang sẽ nhớ, bạn không cần chọn lại.</p>
+  <input type="file" id="file" accept=".json,application/json">
+</div>
+<div class="wrap" id="app" hidden>
+<main>
+  <div class="tabs"><button id="vp">Xé pack</button><button id="vb">Binder</button></div>
+  <div id="packView" hidden>
+    <div style="position:relative"><button class="arr" id="pkl" style="left:0">‹</button><div class="car" id="car"></div><button class="arr" id="pkr" style="right:0">›</button></div>
+    <div class="pinfo box"><h2 id="pname"></h2><p id="pmeta"></p><div class="row"><button class="gold" id="rip1">Xé 1 pack ($4)</button><button id="rip10">Xé 10 pack ($40)</button><button id="pkview">Xem lá trong bộ</button></div></div>
+  </div>
+  <div id="binderView">
+  <div class="rings" id="rings"></div>
+  <div class="bar">
+    <div class="row" id="rar"></div>
+    <div class="row"><button id="miss">Hiện lá thiếu</button><button id="selm">Chọn nhiều</button></div>
+  </div>
+  <div class="bar" id="selbar" hidden>
+    <span id="selinfo"></span>
+    <div class="row"><button class="gold" id="sellsel">Bán đã chọn</button><button id="tobind">Thêm vào binder</button></div>
+  </div>
+  <div class="binder" id="grid"></div>
+  <div class="pg"><button id="prev">‹</button><span id="pginfo"></span><button id="next">›</button></div>
+  </div>
+</main>
+<aside>
+  <div class="box"><h3>Loại TCG</h3><div id="tcgs"></div></div>
+  <div class="box"><h3>Binder</h3><div class="row" id="binders"></div></div>
+  <div class="box"><h3>Bán nhanh</h3><div class="row"><button id="sdup">Bán lá trùng</button><button id="scheap">Bán lá rẻ</button><button id="sslab">Bán slab</button></div></div>
+  <div class="box"><button id="reset" style="width:100%">Xóa dữ liệu đã lưu</button></div>
+</aside>
+</div>
+<div class="ov" id="ov"><h2>Pack vừa xé</h2><div class="pull" id="pull"></div><p style="text-align:center"><button class="gold" id="ovx">Xong</button></p></div>
+
+</body>
+</html>

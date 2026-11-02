@@ -1,0 +1,105 @@
+:root{--bg:#060913;--pn:#0d1424;--ln:#1c2640;--ink:#e8ecf7;--mu:#8d97b3;--gold:#f5c542;--red:#e5484d;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px 'Be Vietnam Pro',system-ui,sans-serif}
+header{display:flex;justify-content:space-between;align-items:center;padding:12px 20px;border-bottom:1px solid var(--ln)}
+h1{font:400 24px 'Lilita One';color:var(--gold);margin:0;-webkit-text-stroke:1px #1b3a8a;paint-order:stroke fill}
+.coins{background:#1b2a14;border:1px solid #3d6b22;color:#9be564;border-radius:999px;padding:6px 14px;font-weight:800}
+.wrap{display:grid;grid-template-columns:1fr 300px;gap:16px;padding:16px;max-width:1200px;margin:0 auto}
+main{min-width:0}
+aside{display:grid;gap:12px;align-content:start}
+.box{background:var(--pn);border:1px solid var(--ln);border-radius:14px;padding:12px}
+.box h3{margin:0 0 8px;font-size:13px;color:var(--mu);font-weight:600}
+button{font:600 13px inherit;font-family:inherit;color:var(--ink);background:#142038;border:1px solid #2a3858;border-radius:10px;padding:8px 12px;cursor:pointer}
+button:hover{border-color:var(--gold)}button:focus-visible,select:focus-visible{outline:2px solid var(--gold)}
+button.gold{background:var(--gold);color:#1a1200;border:0}
+button.on{border-color:var(--gold);color:var(--gold)}
+.tcg{display:flex;justify-content:space-between;width:100%;margin-bottom:6px}
+.tcg small{color:var(--mu)}
+.row{display:flex;flex-wrap:wrap;gap:6px}
+select{width:100%;background:#142038;color:var(--ink);border:1px solid #2a3858;border-radius:10px;padding:8px;margin-bottom:8px;font-family:inherit}
+.rings{display:flex;gap:14px;overflow-x:auto;padding:4px 2px 12px}
+.ring{flex:none;width:72px;text-align:center;background:none;border:0;padding:0;font-size:11px;color:var(--mu)}
+.ring i{display:grid;place-items:center;width:56px;height:56px;border-radius:50%;margin:0 auto 4px;font-style:normal;font-weight:800;color:var(--ink);position:relative}
+.ring i::before{content:"";position:absolute;inset:5px;background:var(--bg);border-radius:50%}
+.ring i b{position:relative;font-size:12px}
+.ring.on{color:var(--gold)}
+.bar{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:10px}
+.binder{background:linear-gradient(135deg,#1a2a52,#0e1630);border:6px solid #7a2a2a;border-radius:14px;padding:14px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.t{position:relative;aspect-ratio:744/1039;border-radius:8px;background:#0a0f1d;border:2px solid var(--ln);overflow:hidden;cursor:pointer;padding:0}
+.t img{width:100%;height:100%;object-fit:contain;display:block}
+.t.miss img{filter:grayscale(1) brightness(.35)}
+.t.sel{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold)}
+.t .q{position:absolute;right:4px;bottom:4px;background:#000c;border-radius:6px;padding:1px 6px;font-size:11px;font-weight:800}
+.t .s{position:absolute;left:4px;top:4px;background:#fff;color:#b3001b;border:1px solid #b3001b;border-radius:3px;font-size:10px;font-weight:800;padding:0 4px}
+.t .nm{position:absolute;inset:auto 0 0 0;font-size:10px;background:#000a;padding:3px}
+.pg{display:flex;justify-content:center;gap:12px;align-items:center;margin-top:12px;color:var(--mu)}
+.load{max-width:520px;margin:60px auto;text-align:center}
+.ov{position:fixed;inset:0;background:#000d;display:none;overflow:auto;padding:20px;z-index:9}
+.ov.on{display:block}.ov .pull{max-width:760px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.ov h2{text-align:center;color:var(--gold)}
+@media(max-width:860px){.wrap{grid-template-columns:1fr}.binder{gap:6px;padding:8px}}
+.tabs{display:flex;gap:8px;margin-bottom:10px}
+.car{position:relative;height:390px;perspective:1100px;overflow:hidden;margin:4px 0 8px}
+.pkw{position:absolute;left:50%;top:10px;width:200px;height:350px;margin-left:-100px;border:0;background:none;padding:0;cursor:pointer;transition:transform .45s,filter .45s,opacity .45s}
+.pk{position:absolute;inset:0;overflow:hidden;background:#0b0714}
+.pk .pa{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.pk .tt{position:absolute;inset:0 0 auto;height:52%;background:linear-gradient(hsl(var(--h) 78% 40%/.97),hsl(var(--h) 78% 40%/.55) 45%,transparent)}
+.pk .bt{position:absolute;inset:auto 0 0;height:48%;background:linear-gradient(transparent,hsl(var(--h) 60% 9%/.65) 40%,hsl(var(--h) 60% 8%))}
+.pk .st{position:absolute;inset:0;background:repeating-linear-gradient(45deg,#fff1 0 1px,transparent 1px 5px)}
+.pk .lg{position:absolute;left:14%;top:8%;width:72%;filter:drop-shadow(0 3px 3px #000)}
+.pk .ttl{position:absolute;left:0;right:0;top:9%;font:400 30px/1 'Lilita One';color:var(--gold);-webkit-text-stroke:3px #4a2a05;paint-order:stroke fill;text-align:center;padding:0 8px}
+.pk .bp{position:absolute;left:0;right:0;bottom:12px;text-align:center;color:#fff;display:grid;gap:2px}
+.pk .bp small{font-size:9px;letter-spacing:3px;opacity:.8}.pk .bp b{font-size:16px;letter-spacing:2px}.pk .bp span{font-size:9px;opacity:.85}
+.arr{position:absolute;top:150px;z-index:20;border-radius:50%;width:36px;height:36px;padding:0}
+.pinfo h2{font:400 34px 'Lilita One';color:var(--gold);margin:0;-webkit-text-stroke:1px #1b3a8a;paint-order:stroke fill}
+.pinfo p{color:var(--mu);margin:6px 0 12px}
+/* ===== FOIL PACK LOOK ===== */
+.pk .tt{opacity:.8}
+.pk .wr{position:absolute;inset:0;pointer-events:none;mix-blend-mode:soft-light;opacity:.7;background:repeating-linear-gradient(97deg,transparent 0 13px,#fff5 14px,transparent 17px 31px,#0006 33px,transparent 36px 53px),repeating-linear-gradient(83deg,transparent 0 41px,#fff3 43px,transparent 46px 77px)}
+.pk .fx{position:absolute;inset:0;pointer-events:none;mix-blend-mode:overlay;opacity:.6;filter:url(#foilN)}
+.pk .sheen{position:absolute;inset:0;pointer-events:none;mix-blend-mode:soft-light;background:radial-gradient(circle at var(--mx,30%) var(--my,18%),#fffe,transparent 48%),linear-gradient(115deg,transparent 28%,hsl(var(--h) 95% 72%/.55) 44%,hsl(calc(var(--h) + 130) 95% 72%/.55) 56%,transparent 72%)}
+.pk::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,#000b 0,transparent 10%,transparent 90%,#000b 100%),linear-gradient(180deg,#fff3,transparent 22%,transparent 78%,#0007)}
+.pk .crimp{position:absolute;left:0;right:0;height:22px;pointer-events:none;background:repeating-linear-gradient(90deg,#0000 0 2px,#0003 2px 3px),linear-gradient(180deg,hsl(var(--h) 25% 88%),hsl(var(--h) 12% 52%) 60%,hsl(var(--h) 20% 80%))}
+.pk .crimp.t{top:0;box-shadow:0 3px 5px #0008}
+.pk .crimp.b{bottom:0;transform:scaleY(-1);box-shadow:0 3px 5px #0008}
+.pkw.act .pk{transform:perspective(700px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));transition:transform .12s}
+/* ===== RIP OVERLAY ===== */
+.rip{position:fixed;inset:0;z-index:30;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:radial-gradient(circle at 50% 40%,#1a1030,#05030b 72%);overflow:hidden;touch-action:none;user-select:none}
+.rip.on{display:flex}
+.rx{position:absolute;top:14px;right:14px;z-index:6}
+.rstage{position:relative;width:260px;height:455px}
+.rglow{position:absolute;inset:-70px;background:radial-gradient(closest-side,hsl(var(--h,275) 90% 60%/.6),transparent);opacity:var(--gl,.25);transition:opacity .25s;pointer-events:none}
+.rpack{position:absolute;inset:0;cursor:grab;outline:none;animation:fl 3s ease-in-out infinite;transform:perspective(800px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));touch-action:none;filter:drop-shadow(0 22px 28px #000a)}
+.rpack:focus-visible{outline:2px solid var(--gold);outline-offset:8px}
+@keyframes fl{50%{translate:0 -8px}}
+.rpack.drag{animation:none;cursor:grabbing}
+.rpack.open{animation:none}
+.rpack .half{position:absolute;inset:0;transition:transform .5s cubic-bezier(.2,.8,.2,1),opacity .5s}
+.rpack.drag .half{transition:none}
+#rbody{z-index:0}#rtop{z-index:2}
+.rlight{position:absolute;left:-4%;right:-4%;top:calc(13% - 14px);height:28px;z-index:1;pointer-events:none;background:radial-gradient(ellipse at 50% 50%,#fff,#ffe9a0 35%,transparent 70%);opacity:var(--lt,0);filter:blur(3px)}
+.rguide{position:absolute;left:4%;right:4%;top:13%;z-index:3;pointer-events:none;border-top:2px dashed #fffb;text-align:center;animation:gd 1.4s ease-in-out infinite}
+.rguide span{position:relative;top:10px;font-size:12px;font-weight:800;color:#fff;text-shadow:0 1px 4px #000;background:#0008;border-radius:99px;padding:3px 10px}
+@keyframes gd{50%{opacity:.35}}
+.rpack.drag .rguide,.rpack.open .rguide{display:none}
+.rdeck{position:absolute;inset:0;display:none}
+.rdeck.on{display:block}
+.rc{position:absolute;left:50%;top:50%;translate:-50% -50%;width:230px;aspect-ratio:744/1039;cursor:pointer;perspective:900px;transition:transform .5s cubic-bezier(.2,.8,.2,1),opacity .4s;animation:rise .6s cubic-bezier(.2,.8,.2,1) both}
+@keyframes rise{from{opacity:0;margin-top:120px}}
+.rc .in{position:absolute;inset:0;transform-style:preserve-3d;transition:transform .6s}
+.rc.flip .in{transform:rotateY(180deg)}
+.rc.out{transform:translateX(-140%) rotate(-14deg)!important;opacity:0;pointer-events:none}
+.rc .rb,.rc .rf{position:absolute;inset:0;border-radius:12px;backface-visibility:hidden;overflow:hidden}
+.rc .rb{background:repeating-linear-gradient(45deg,#14306b 0 9px,#193a82 9px 18px);border:6px solid #e8b93a;display:grid;place-items:center;font-size:54px;color:#e8b93a}
+.rc .rf{transform:rotateY(180deg);background:#0a0f1d;border:2px solid var(--c)}
+.rc .rf img{width:100%;height:100%;object-fit:contain;display:block}
+.rc .rf .nm{position:absolute;inset:auto 0 0;padding:6px;background:#000a;font-size:12px}
+.rc .rf .s{position:absolute;left:6px;top:6px;background:#fff;color:#b3001b;border:1px solid #b3001b;border-radius:3px;font-size:11px;font-weight:800;padding:0 5px}
+.rc.flip.hi .rf{box-shadow:0 0 46px 8px var(--c)}
+.rc .rf.holo::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(115deg,transparent 30%,#fff6 45%,#ff9bf066 50%,#8ff5ff66 55%,transparent 70%);background-size:250% 100%;animation:hl 2.4s linear infinite}
+@keyframes hl{from{background-position:150% 0}to{background-position:-100% 0}}
+.rflash{position:absolute;inset:-120px;pointer-events:none;z-index:4;opacity:0;background:radial-gradient(circle at 50% 40%,#fff,#ffe9a0 20%,transparent 60%)}
+.rflash.go{animation:fh .7s ease-out}
+@keyframes fh{0%{opacity:0}18%{opacity:.95}100%{opacity:0}}
+.rhint{color:var(--mu);margin:0;min-height:20px;text-align:center;padding:0 16px}
+@media(prefers-reduced-motion:reduce){.rpack,.rguide,.rc{animation:none}}
