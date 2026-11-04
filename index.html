@@ -3,79 +3,285 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Riftbound Market</title>
+    <title>CheckPrice – Check prices for TCG games</title>
+    <meta name="description" content="CheckPrice: tra giá thị trường, độ hiếm và thông tin thẻ bài cho Pokémon TCG, Riftbound, One Piece, Yu-Gi-Oh! và các game TCG khác.">
+    <meta name="color-scheme" content="light dark">
+    <meta name="theme-color" content="#FFD27A">
+    <!-- Đặt giao diện sáng/tối TRƯỚC khi CSS vẽ, tránh nháy trắng -->
+    <script>
+        (function () {
+            var t = 'light';
+            try {
+                t = localStorage.getItem('checkprice-theme');
+                if (t !== 'dark' && t !== 'light') t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            } catch (e) { t = 'light'; }
+            document.documentElement.setAttribute('data-theme', t);
+        })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <script src="script.js" defer></script>
+    <script src="fx.js" defer></script>
+    <noscript><style>.intro{display:none!important}body.intro-lock{overflow:auto!important}</style></noscript>
 </head>
-<body>
+<body class="intro-lock">
+
+<!-- =====================================================
+     INTRO VIDEO
+     - Có file assets/intro.mp4 (hoặc intro.webm): phát video thật.
+     - Chưa có file: tự chạy intro hoạt hình bên dưới.
+     Chỉ phát 1 lần mỗi phiên, có nút "Bỏ qua".
+===================================================== -->
+<div class="intro" id="intro" role="dialog" aria-modal="true" aria-label="Video giới thiệu CheckPrice">
+    <video class="intro-video" id="introVideo" muted playsinline preload="auto">
+        <source src="assets/intro.mp4" type="video/mp4">
+        <source src="assets/intro.webm" type="video/webm">
+    </video>
+
+    <div class="intro-anim" id="introAnim">
+        <div class="intro-stage">
+            <div class="intro-chips" aria-hidden="true">
+                <span class="intro-chip" style="--i:0" data-glogo="pokemon"   data-size="84"></span>
+                <span class="intro-chip" style="--i:1" data-glogo="riftbound" data-size="84"></span>
+                <span class="intro-chip" style="--i:2" data-glogo="onepiece"  data-size="84"></span>
+                <span class="intro-chip" style="--i:3" data-glogo="yugioh"    data-size="84"></span>
+                <span class="intro-chip" style="--i:4" data-glogo="gundam"    data-size="84"></span>
+                <span class="intro-chip" style="--i:5" data-glogo="dbs"       data-size="84"></span>
+                <span class="intro-chip" style="--i:6" data-glogo="lorcana"   data-size="84"></span>
+                <span class="intro-chip" style="--i:7" data-glogo="mtg"       data-size="84"></span>
+            </div>
+
+            <div class="intro-brand">
+                <span class="intro-coin">C</span>
+                <div class="intro-name">Check<b>Price</b></div>
+                <p class="intro-tag">Tra giá mọi lá bài TCG</p>
+                <div class="intro-currency" aria-hidden="true"><span>USD</span><span>VND</span></div>
+            </div>
+        </div>
+        <div class="intro-bar" aria-hidden="true"><i></i></div>
+    </div>
+
+    <button class="intro-skip" id="introSkip" type="button">Bỏ qua ›</button>
+</div>
 
 <header class="header">
-    <a class="logo" href="#">
-        <span class="logo-icon">R</span>
-        <span>RIFTBOUND <b>MARKET</b></span>
+    <a class="logo" href="#top" aria-label="CheckPrice – về đầu trang">
+        <span class="logo-icon">C</span>
+        <span>Check<b>Price</b></span>
     </a>
 
-    <nav>
-        <a class="active" href="#market">Market</a>
+    <nav aria-label="Điều hướng chính">
+        <a class="active" href="#games">Games</a>
+        <a href="#market">Market</a>
         <a href="#database">Card Database</a>
         <a href="#about">About</a>
     </nav>
 
     <div class="header-right">
-        <span class="live"><i></i> MARKET TRACKER</span>
+        <span class="live"><i></i> Giá cập nhật</span>
+        <button type="button" class="theme-toggle" id="themeToggle"
+                aria-label="Chuyển sang giao diện tối" title="Chuyển sang giao diện tối" aria-pressed="false">
+            <svg class="sun-and-moon" aria-hidden="true" width="24" height="24" viewBox="0 0 24 24">
+                <mask class="moon" id="moon-mask">
+                    <rect x="0" y="0" width="100%" height="100%" fill="white"/>
+                    <circle class="moon-cut" cx="24" cy="10" r="6" fill="black"/>
+                </mask>
+                <circle class="sun" cx="12" cy="12" r="6" mask="url(#moon-mask)" fill="currentColor"/>
+                <g class="sun-beams" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <line x1="12" y1="1" x2="12" y2="3"/>
+                    <line x1="12" y1="21" x2="12" y2="23"/>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                    <line x1="1" y1="12" x2="3" y2="12"/>
+                    <line x1="21" y1="12" x2="23" y2="12"/>
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                </g>
+            </svg>
+        </button>
         <button id="importButton">＋ Import Cards</button>
         <input type="file" id="jsonFile" accept=".json" hidden>
     </div>
 </header>
 
-<main>
+<main id="top">
 
-<section class="hero">
-    <div class="hero-content">
-        <span class="eyebrow">RIFTBOUND TRADING CARD DATABASE</span>
-        <h1>DISCOVER THE<br><span>VALUE OF CARDS.</span></h1>
-        <p>
-            Khám phá, tra cứu độ hiếm và theo dõi giá trị
-            thị trường của những lá bài Riftbound.
-        </p>
-        <a href="#database" class="hero-button">EXPLORE CARDS ↗</a>
-    </div>
+<!-- =====================================================
+     BANNER TỰ CHẠY QUA LẠI (ping-pong)
+     Thêm/bớt slide: copy một <article class="slide"> và sửa nội dung.
+     data-go="id-game" = bấm nút sẽ chuyển sang game đó.
+===================================================== -->
+<section class="banner" id="banner" aria-roledescription="carousel" aria-label="Giới thiệu CheckPrice">
+    <h1 class="visually-hidden">CheckPrice – tra giá thẻ bài TCG</h1>
 
-    <div class="hero-visual">
-        <div class="decor-circle"></div>
-        <div class="fake-card card-back">
-            <span>R</span>
-            <small>RIFTBOUND</small>
+    <div class="banner-frame">
+        <div class="banner-track">
+
+            <!-- SLIDE 1: WELCOME (Tổng hợp các card nổi tiếng) -->
+            <article class="slide s-welcome" aria-roledescription="slide" aria-label="CheckPrice">
+                <div class="slide-copy">
+                    <span class="chip">CheckPrice</span>
+                    <h2>Tra giá mọi lá bài TCG trong vài giây</h2>
+                    <p>Tìm theo tên, mã thẻ hoặc họa sĩ. Xem giá USD và VND cạnh nhau, rồi lưu lại bộ sưu tập của bạn.</p>
+                    <a class="btn dark" href="#games">Chọn game để tra giá</a>
+                </div>
+                <div class="slide-art" aria-hidden="true">
+                    <!-- Lá 1: Blue-Eyes White Dragon (Yu-Gi-Oh!) -->
+                    <div class="art-card">
+                        <img src="https://images.ygoprodeck.com/images/cards/89631139.jpg" alt="Blue-Eyes White Dragon" loading="lazy">
+                    </div>
+                    <!-- Lá 2: Charizard Base Set (Pokémon - Chính giữa) -->
+                    <div class="art-card">
+                        <img src="https://images.pokemontcg.io/base1/4_hires.png" alt="Charizard Base Set" loading="lazy">
+                    </div>
+                    <!-- Lá 3: Dark Magician (Yu-Gi-Oh! - Thay thế ổn định không lo chết link) -->
+                    <div class="art-card">
+                        <img src="https://images.ygoprodeck.com/images/cards/46986414.jpg" alt="Dark Magician" loading="lazy">
+                    </div>
+                    <span class="art-tag a">Top Search 🔥</span>
+                    <span class="art-tag b">$1,250</span>
+                </div>
+            </article>
+
+            <!-- SLIDE 2: POKÉMON TCG -->
+            <article class="slide s-pokemon" aria-roledescription="slide" aria-label="Pokémon TCG">
+                <div class="slide-copy">
+                    <span class="chip"><i data-glogo="pokemon" data-size="28"></i> Pokémon TCG</span>
+                    <h2>Giá từng lá Pokémon, theo từng bộ bài</h2>
+                    <p>Chọn bộ, xem giá thị trường của từng lá từ TCGplayer và Cardmarket, quy đổi sang VND ngay trên màn hình.</p>
+                    <button class="btn dark" type="button" data-go="pokemon">Tra giá Pokémon</button>
+                </div>
+                <div class="slide-art" aria-hidden="true">
+                    <!-- Lá 1: Pikachu VMAX -->
+                    <div class="art-card">
+                        <img src="https://images.pokemontcg.io/swsh4/44_hires.png" alt="Pikachu VMAX" loading="lazy">
+                    </div>
+                    <!-- Lá 2: Rayquaza VMAX Alt Art (Chính giữa) -->
+                    <div class="art-card">
+                        <img src="https://images.pokemontcg.io/swsh7/218_hires.png" alt="Rayquaza VMAX Alt Art" loading="lazy">
+                    </div>
+                    <!-- Lá 3: Umbreon VMAX Moonbreon -->
+                    <div class="art-card">
+                        <img src="https://images.pokemontcg.io/swsh7/215_hires.png" alt="Umbreon VMAX Alt Art" loading="lazy">
+                    </div>
+                    <span class="art-tag a">Secret Rare ✨</span>
+                    <span class="art-tag b">$650.00</span>
+                </div>
+            </article>
+
+        <!-- SLIDE 3: RIFTBOUND (Thẻ bài Riftbound TCG thực tế) -->
+            <article class="slide s-riftbound" aria-roledescription="slide" aria-label="Riftbound">
+                <div class="slide-copy">
+                    <span class="chip"><i data-glogo="riftbound" data-size="28"></i> Riftbound</span>
+                    <h2>Riftbound: tìm lá bài, biết ngay giá</h2>
+                    <p>Lọc theo miền, loại thẻ và độ hiếm. Mở từng lá để xem hiệu ứng, họa sĩ và giá thị trường.</p>
+                    <button class="btn dark" type="button" data-go="riftbound">Tra giá Riftbound</button>
+                </div>
+                <div class="slide-art" aria-hidden="true">
+                    <!-- Lá 1: Decisive Strike (Spell Card thật của Riftbound) -->
+                    <div class="art-card">
+                        <img src="https://static.dotgg.gg/riftbound/cards/OGN-039a.webp" alt="Kaisa" loading="lazy" onerror="this.onerror=null;this.src='https://images.pokemontcg.io/swsh12pt5/160_hires.png';">
+                    </div>
+                    <!-- Lá 2: Tibbers (Unit / Companion Card thật của Riftbound - Chính giữa) -->
+                    <div class="art-card">
+                        <img src="https://static.dotgg.gg/riftbound/cards/UNL-238.webp" alt="Baron" loading="lazy" onerror="this.onerror=null;this.src='https://images.pokemontcg.io/swsh9/172_hires.png';">
+                    </div>
+                    <!-- Lá 3: Pouty Poro / Spell (Riftbound Card thật) -->
+                    <div class="art-card">
+                        <img src="https://static.dotgg.gg/riftbound/cards/RAD-137A.webp" alt="Morderkaiser" loading="lazy" onerror="this.onerror=null;this.src='https://images.pokemontcg.io/swsh8/269_hires.png';">
+                    </div>
+                    <span class="art-tag a">Legendary 💎</span>
+                    <span class="art-tag b">$320.00</span>
+                </div>
+            </article>
+
+            <!-- SLIDE 4: ONE PIECE CARD GAME -->
+            <article class="slide s-onepiece" aria-roledescription="slide" aria-label="One Piece Card Game">
+                <div class="slide-copy">
+                    <span class="chip"><i data-glogo="onepiece" data-size="28"></i> One Piece Card Game</span>
+                    <h2>One Piece: lọc theo màu, độ hiếm và giá</h2>
+                    <p>Sắp xếp từ giá cao đến thấp để thấy ngay lá nào đáng giá nhất trong bộ.</p>
+                    <button class="btn dark" type="button" data-go="onepiece">Tra giá One Piece</button>
+                </div>
+                <div class="slide-art" aria-hidden="true">
+                    <!-- Lá 1: Shanks Manga -->
+                    <div class="art-card">
+                        <img src="https://static.dotgg.gg/onepiece/card/ST27-005_p1.webp" alt="Shanks SEC Parallel" loading="lazy">
+                    </div>
+                    <!-- Lá 2: Manga Gear 5 Luffy (Chính giữa) -->
+                    <div class="art-card">
+                        <img src="https://static.dotgg.gg/onepiece/card/ST22-001_p1.webp" alt="Luffy SEC Parallel" loading="lazy">
+                    </div>
+                    <!-- Lá 3: Portgas.D.Ace Manga -->
+                    <div class="art-card">
+                        <img src="https://static.dotgg.gg/onepiece/card/ST18-004_p2.webp" alt="Ace SR Parallel" loading="lazy">
+                    </div>
+                    <span class="art-tag a">Manga Art 🔥</span>
+                    <span class="art-tag b">$1,850</span>
+                </div>
+            </article>
+
+            <!-- SLIDE 5: YU-GI-OH! -->
+            <article class="slide s-yugioh" aria-roledescription="slide" aria-label="Yu-Gi-Oh!">
+                <div class="slide-copy">
+                    <span class="chip"><i data-glogo="yugioh" data-size="28"></i> Yu-Gi-Oh!</span>
+                    <h2>Yu-Gi-Oh!: mỗi bộ bài một bảng giá</h2>
+                    <p>Chọn bộ, các độ hiếm của cùng một mã thẻ được gộp lại để bạn so giá dễ hơn.</p>
+                    <button class="btn dark" type="button" data-go="yugioh">Tra giá Yu-Gi-Oh!</button>
+                </div>
+                <div class="slide-art" aria-hidden="true">
+                    <!-- Lá 1: Dark Magician -->
+                    <div class="art-card">
+                        <img src="https://images.ygoprodeck.com/images/cards/46986414.jpg" alt="Dark Magician" loading="lazy">
+                    </div>
+                    <!-- Lá 2: Slifer The Sky Dragon (Chính giữa) -->
+                    <div class="art-card">
+                        <img src="https://images.ygoprodeck.com/images/cards/10000020.jpg" alt="Slifer The Sky Dragon" loading="lazy">
+                    </div>
+                    <!-- Lá 3: Exodia The Forbidden One -->
+                    <div class="art-card">
+                        <img src="https://images.ygoprodeck.com/images/cards/33396948.jpg" alt="Exodia" loading="lazy">
+                    </div>
+                    <span class="art-tag a">Starlight Rare 🌟</span>
+                    <span class="art-tag b">$490.00</span>
+                </div>
+            </article>
+
         </div>
-        <div class="fake-card card-front">
-            <small>MARKET COLLECTION</small>
-            <strong>✦</strong>
-            <b>COLLECT<br>YOUR LEGACY</b>
-        </div>
-        <div class="floating-label">USD <b>+</b> VND</div>
+
+        <button class="banner-nav prev" type="button" aria-label="Slide trước">‹</button>
+        <button class="banner-nav next" type="button" aria-label="Slide sau">›</button>
+        <div class="banner-dots" role="tablist" aria-label="Chọn slide"></div>
     </div>
 </section>
 
-<section class="stats" id="market">
+<!-- =====================================================
+     LOGO TỪNG DÒNG TCG (tự tạo từ TCG_GAMES trong script.js)
+===================================================== -->
+<section class="games" id="games">
+    <div class="games-head">
+        <h2>Bạn chơi game nào?</h2>
+        <p>Bấm vào một dòng TCG để xem danh sách thẻ và giá.</p>
+    </div>
+    <div class="game-tiles" id="gameTiles"></div>
+</section>
+
+<section class="stats" id="market" aria-label="Thống kê">
     <div class="stat">
-        <small>TOTAL CARDS</small>
         <strong id="totalCards">0</strong>
         <span>Tổng số thẻ</span>
     </div>
     <div class="stat">
-        <small>AVAILABLE SETS</small>
         <strong id="totalSets">0</strong>
         <span>Bộ sưu tập</span>
     </div>
     <div class="stat">
-        <small>MARKET PRICES</small>
         <strong id="pricedCards">0</strong>
         <span>Thẻ có dữ liệu giá</span>
     </div>
     <div class="stat">
-        <small>CURRENCY</small>
         <strong>USD / VND</strong>
         <span>Hai loại tiền tệ</span>
     </div>
@@ -85,14 +291,36 @@
 
     <div class="section-heading">
         <div>
-            <span class="eyebrow">EXPLORE THE COLLECTION</span>
-            <h2>Card Database</h2>
-            <p>Tìm kiếm và khám phá toàn bộ thẻ Riftbound.</p>
+            <h2>Card Price Checker</h2>
+            <p>Tìm kiếm và tra giá toàn bộ thẻ của game bạn chọn.</p>
         </div>
         <div class="heading-actions">
             <button id="importPrices">Import Market Prices</button>
             <input type="file" id="priceFile" accept=".json" hidden>
-            <button id="resetFilters">Reset Filters</button>
+            <button id="resetFilters">Đặt lại bộ lọc</button>
+        </div>
+    </div>
+
+    <!-- Chọn game TCG (dropdown). Danh sách game nằm trong script.js: TCG_GAMES -->
+    <div class="tcg-selector-bar">
+        <span class="tcg-label">Đang xem</span>
+
+        <div class="game-dropdown" id="gameDropdown">
+            <button type="button" class="game-trigger" id="gameTrigger"
+                    aria-haspopup="listbox" aria-expanded="false">
+                <span class="game-icon" id="gameIcon"></span>
+                <span class="game-name" id="gameName">Pokémon TCG</span>
+                <svg class="game-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M6 9l6 6 6-6"/>
+                </svg>
+            </button>
+
+            <div class="game-menu" id="gameMenu" role="listbox" hidden>
+                <input type="search" class="game-search" id="gameSearch"
+                       placeholder="Tìm game TCG..." autocomplete="off">
+                <div class="game-list" id="gameList"></div>
+            </div>
         </div>
     </div>
 
@@ -101,7 +329,7 @@
         <input
             type="search"
             id="search"
-            placeholder="⌕  Search card name, code, artist..."
+            placeholder="Tìm theo tên thẻ, mã thẻ, họa sĩ..."
         >
 
         <div class="filters">
@@ -131,10 +359,10 @@
     </div>
 
     <div class="toolbar">
-        <span id="resultCount">0 CARDS FOUND</span>
+        <span id="resultCount">0 thẻ</span>
 
         <div class="currency-switch">
-            <button class="active" data-currency="both">BOTH</button>
+            <button class="active" data-currency="both">Cả hai</button>
             <button data-currency="usd">USD</button>
             <button data-currency="vnd">VND</button>
         </div>
@@ -142,40 +370,40 @@
 
     <div id="emptyState" class="empty">
         <div>✦</div>
-        <h3>Welcome to Riftbound Market</h3>
-        <p>Import your cards.json file to start exploring.</p>
-        <button id="emptyImport">IMPORT CARD DATABASE</button>
+        <h3>Chào mừng đến CheckPrice</h3>
+        <p>Chọn một game TCG và một bộ bài để bắt đầu tra giá.</p>
+        <button id="emptyImport">Import card database</button>
     </div>
 
     <div class="card-grid" id="cardGrid"></div>
 
     <div class="pagination">
-        <button id="prevPage">← Previous</button>
-        <span id="pageInfo">Page 1</span>
-        <button id="nextPage">Next →</button>
+        <button id="prevPage">← Trước</button>
+        <span id="pageInfo">Trang 1</span>
+        <button id="nextPage">Sau →</button>
     </div>
 
 </section>
 
 <section class="about" id="about">
-    <span class="eyebrow">MARKET TRANSPARENCY</span>
-    <h2>KNOW YOUR CARDS.<br><span>KNOW THEIR VALUE.</span></h2>
+    <h2>Biết lá bài.<br>Biết luôn giá bài.</h2>
     <p>
-        A community card database designed for Riftbound collectors.
-        Market prices will be displayed when verified price data is available.
+        CheckPrice is a price checker for TCG games, built for collectors and players.
+        Prices come from TCGplayer and Cardmarket and are shown when verified price data is available.
     </p>
 </section>
 
 </main>
 
 <footer>
-    <strong>RIFTBOUND <span>MARKET</span></strong>
-    <small>Unofficial community project. Not affiliated with Riot Games.</small>
+    <strong>Check<span>Price</span> <small>for TCG games</small></strong>
+    <small>Unofficial community project. Not affiliated with Riot Games, The Pokémon Company, TCGplayer or Cardmarket.</small>
+    <button type="button" class="link-btn" id="replayIntro">Xem lại intro</button>
 </footer>
 
 <div class="modal" id="detailModal">
     <div class="modal-content">
-        <button class="close" id="closeModal">×</button>
+        <button class="close" id="closeModal" aria-label="Đóng">×</button>
         <div id="detailContent"></div>
     </div>
 </div>

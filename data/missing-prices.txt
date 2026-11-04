@@ -1,3 +1,0 @@
-code	rarity	name	lý do
-unl-t04	Common	Buff	không tìm thấy trên TCGplayer (có thể không bán riêng)
-unl-t05	Common	Gold	không tìm thấy trên TCGplayer (có thể không bán riêng)
