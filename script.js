@@ -6,14 +6,28 @@ let currency = 'both';
 let page = 1;
 const PAGE_SIZE = 20;
 
-const rarityOrder = [
-    'Common', 'Uncommon', 'Rare',
-    'Epic', 'Legendary', 'Showcase'
-];
-
 // --- 1. KHAI BÁO CÁC HÀM XỬ LÝ ĐỘ HIẾM LÊN ĐẦU TRÁNH LỖI ReferenceError ---
+// Mã độ hiếm viết tắt (One Piece & các game để nguyên mã) -> slug
+const RARITY_SHORT = {
+    c: 'common',
+    uc: 'uncommon', u: 'uncommon',
+    r: 'rare',
+    sr: 'epic',
+    l: 'legendary', lr: 'legendary',
+    sec: 'showcase', scr: 'showcase', spr: 'showcase',
+    sp: 'showcase', tr: 'showcase', alt: 'showcase',
+    // Weiss Schwarz
+    rr: 'epic', rrr: 'epic', ssp: 'showcase', ttr: 'showcase',
+    pr: 'rare', cr: 'rare', cc: 'uncommon', td: 'common'
+};
+
 function getRarityClass(rarity) {
     const v = String(rarity || '').toLowerCase();
+
+    // Mã viết tắt: "SR", "SEC", "SP CARD", "SR-P"... (khớp nguyên mã, không dính chữ khác)
+    const code = v.replace(/[^a-z]/g, '');
+    if (RARITY_SHORT[code]) return RARITY_SHORT[code];
+    if (/^sp\b/.test(v) || /^sec\b/.test(v)) return 'showcase';
 
     if (/secret|hyper|illustration|ultra|radiant|amazing|shiny|ace spec|rainbow|gold|mega|crown|prism|showcase|special|treasure|manga|ultimate|ghost|starlight|collector/.test(v)) return 'showcase';
     if (/holo|foil|reverse/.test(v)) return 'holo';
@@ -247,7 +261,7 @@ function buildSetSelect(label) {
 
 function buildFilters() {
     const isPokemon = currentGame === 'pokemon';
-    const setDriven = currentGame === 'pokemon' || currentGame === 'yugioh';
+    const setDriven = currentGame === 'pokemon' || currentGame === 'yugioh' || currentGame in FILE_GAMES;
     const gameName = (TCG_GAMES.find(g => g.id === currentGame) || {}).name || '';
     if (ygoSearchEl) ygoSearchEl.style.display = currentGame === 'yugioh' ? '' : 'none';
 
@@ -264,7 +278,7 @@ function buildFilters() {
         cards.flatMap(c => (c.domain ? c.domain.split(', ') : [])),
         isPokemon ? 'All Energy Types'
             : currentGame === 'yugioh' ? 'All Attributes'
-            : (currentGame === 'gundam' || currentGame === 'dbs') ? 'All Colors'
+            : (currentGame === 'gundam' || currentGame === 'dbs' || (FILE_GAMES[currentGame] && FILE_GAMES[currentGame].ws)) ? 'All Colors'
             : 'All Domains'
     );
     
@@ -336,7 +350,7 @@ function render() {
             <article class="card-item${extraClass}" ${rarityAttr} data-code="${escapeHTML(card.code)}">
                 <div class="card-image">
                     ${card.image
-                        ? `<img loading="lazy" src="${escapeHTML(card.image)}" alt="${escapeHTML(card.name)}" onerror="cardImgError(this)">`
+                        ? `<img loading="lazy" referrerpolicy="no-referrer" src="${escapeHTML(card.image)}" alt="${escapeHTML(card.name)}" onerror="cardImgError(this)">`
                         : ''}
                     ${renderRarity(card.rarity)}
                 </div>
@@ -419,6 +433,9 @@ function detailStats(card) {
     } else if (card.tcg === 'dbs') {
         row1 = [['Cost', card.cost], ['Power', card.power], ['Combo', card.combo]];
         row2 = [['Color', card.domain], ['Type', card.type], ['Rarity', card.rarity]];
+    } else if (FILE_GAMES[card.tcg] && FILE_GAMES[card.tcg].ws) {
+        row1 = [['Level', card.level], ['Cost', card.cost], ['Power', card.power]];
+        row2 = [['Color', card.domain], ['Type', card.type], ['Rarity', card.rarity]];
     } else if (card.tcg === 'gundam') {
         row1 = [['Cost', card.cost], ['Level', card.level], ['AP / HP', card.ap !== '' || card.hp !== '' ? `${card.ap} / ${card.hp}` : '']];
         row2 = [['Color', card.domain], ['Type', card.type], ['Rarity', card.rarity]];
@@ -428,6 +445,19 @@ function detailStats(card) {
     }
     const grid = r => `<div class="stat-grid stat-grid-3">${r.map(([l, v]) => statHTML(l, v)).join('')}</div>`;
     return grid(row1) + grid(row2);
+}
+
+// Nút mua trong chi tiết thẻ, áp dụng cho MỌI game:
+//  - "Buy now": chỉ khi dữ liệu giá của thẻ có sẵn link (p.url)
+//  - TCGplayer: link tìm theo tên thẻ (game nào cũng có)
+//  - eBay: thêm cho game KAYOU, vì thẻ KAYOU chưa có nguồn giá
+function buyLinksHTML(card, p) {
+    const links = [];
+    if (p.url) links.push(['Buy now', p.url]);
+    links.push(['Tìm trên TCGplayer', 'https://www.tcgplayer.com/search/all/product?q=' + encodeURIComponent(card.name)]);
+    if (FILE_GAMES[card.tcg]) links.push(['Tìm giá trên eBay', ebaySearchURL(card)]);
+    return links.map(([label, url]) =>
+        `<a class="buy-btn" href="${escapeHTML(url)}" target="_blank" rel="noopener">${label}</a>`).join('');
 }
 
 function showDetail(code) {
@@ -443,14 +473,14 @@ function showDetail(code) {
             <header class="detail-head">
                 <span class="detail-gem rarity-${slug}">◆</span>
                 <div>
-                    <h2>${escapeHTML(['onepiece', 'yugioh'].includes(card.tcg) ? card.number : card.code)} ${escapeHTML(card.name)}</h2>
+                    <h2>${escapeHTML(['onepiece', 'yugioh'].includes(card.tcg) || FILE_GAMES[card.tcg] ? card.number : card.code)} ${escapeHTML(card.name)}</h2>
                     <p>${escapeHTML(card.type || 'Card')}</p>
                 </div>
             </header>
 
             <div class="detail-body">
                 <div class="detail-art">
-                    <img src="${escapeHTML(card.image)}" alt="${escapeHTML(card.name)}" onerror="cardImgError(this)">
+                    <img referrerpolicy="no-referrer" src="${escapeHTML(card.image)}" alt="${escapeHTML(card.name)}" onerror="cardImgError(this)">
                     ${card.image
                         ? `<a class="zoom-btn" href="${escapeHTML(card.image)}" target="_blank" rel="noopener" aria-label="Xem ảnh gốc">⌕</a>`
                         : ''}
@@ -500,7 +530,7 @@ function showDetail(code) {
                             <span>EUR (Cardmarket)</span><b>€${Number(p.eur).toFixed(2)}</b>
                         </div>` : ''}
                         <small class="market-source">${escapeHTML(p.source || 'Chưa có nguồn giá')}</small>
-                        ${p.url ? `<a class="buy-btn" href="${escapeHTML(p.url)}" target="_blank" rel="noopener">Buy now</a>` : ''}
+                        ${buyLinksHTML(card, p)}
                     </div>
 
                     <div class="side-box">
@@ -531,6 +561,16 @@ function importJSON(file, callback) {
     reader.readAsText(file);
 }
 
+// Nạp danh sách thẻ vào bảng: dùng chung cho mọi game (trước đây mỗi game lặp lại 5 dòng này)
+function showCards(list, emptyMsg = '') {
+    list.forEach(c => { if (c.market) embeddedPrices[c.code] = c.market; });
+    cards = list;
+    page = 1;
+    buildFilters();
+    render();
+    if (!list.length && emptyMsg) $('#resultCount').textContent = emptyMsg;
+}
+
 const CARDS_URL = 'data/riftbound.json';
 const PRICES_URL = 'data/prices.json';
 
@@ -557,139 +597,56 @@ async function loadRemoteData() {
     }
 }
 
-// --- 5. TCGDEX API CALLS ---
-async function fetchPokemonSets() {
-    try {
-        console.log("Đang tải danh sách Sets từ TCGDex...");
-        const res = await fetch('https://api.tcgdex.net/v2/en/sets');
-        if (!res.ok) throw new Error('Không thể kết nối danh sách Sets');
-        
-        const sets = await res.json();
-        console.log(`✅ Tải thành công ${sets.length} bộ bài (Sets)!`);
-        return sets;
-    } catch (error) {
-        console.error("Lỗi tải danh sách Sets:", error);
-        return [
-            { id: 'sm10', name: 'Unbroken Bonds' },
-            { id: 'xy12', name: 'Evolutions' },
-            { id: 'sm11', name: 'Unified Minds' }
-        ];
-    }
-}
-
-const TCGDEX = 'https://api.tcgdex.net/v2/en';
-const DEFAULT_POKEMON_SET = 'sm10';
-const POKEMON_CACHE_TTL = 12 * 3600 * 1000;       // cache 12 giờ (giá đổi liên tục)
+// --- 5. POKÉMON: đọc từ pokemon.json (tạo bằng update-pokemon.js) — KHÔNG còn gọi API TCGdex ---
+const POKEMON_DATA_URL = 'data/pokemon.json';     // đổi cho khớp chỗ bạn để onepiece.json
+let DEFAULT_POKEMON_SET = '';                     // để trống = tự chọn bộ mới nhất sau khi tải
 let pokemonSetsList = [];
 let pokemonToken = 0;                             // hủy lượt tải cũ khi đổi bộ
+let pokemonAll = null;                            // cache trong bộ nhớ: toàn bộ thẻ
 
 async function fetchJSON(url) {
     const res = await fetch(url);
     if (!res.ok) throw new Error(res.status + ' ' + url);
     return res.json();
 }
-
-// Chạy `worker` cho từng phần tử, tối đa `limit` request cùng lúc
-async function mapLimit(items, limit, worker) {
-    let next = 0;
-    await Promise.all(Array.from({ length: limit }, async () => {
-        while (next < items.length) {
-            const i = next++;
-            await worker(items[i], i);
-        }
-    }));
+// Tải pokemon.json 1 lần, các lần sau dùng lại
+async function loadPokemonData() {
+    if (pokemonAll) return pokemonAll;
+    const res = await fetch(POKEMON_DATA_URL, { cache: 'no-cache' });
+    if (!res.ok) throw new Error(`Không đọc được ${POKEMON_DATA_URL} (${res.status})`);
+    pokemonAll = await res.json();
+    return pokemonAll;
 }
 
-function readPokemonCache(setId) {
+// Danh sách bộ lấy từ chính pokemon.json: [{ id, name, count, releaseDate }], mới nhất lên đầu
+async function fetchPokemonSets() {
     try {
-        const c = JSON.parse(localStorage.getItem('tcgdex_set_v3_' + setId) || 'null');
-        return c && Date.now() - c.time < POKEMON_CACHE_TTL ? c.cards : null;
-    } catch (e) { return null; }
-}
-
-function writePokemonCache(setId, list) {
-    try { localStorage.setItem('tcgdex_set_v3_' + setId, JSON.stringify({ time: Date.now(), cards: list })); }
-    catch (e) { /* hết dung lượng thì bỏ qua */ }
-}
-
-// Gộp dữ liệu tóm tắt (brief) + chi tiết (d) thành một thẻ cùng định dạng với Riftbound
-function pokemonCard(setDetail, brief, d = {}) {
-    const setId = setDetail.id || '';
-    // Ảnh: ưu tiên link TCGdex trả về; không có thì tự ghép đúng đường dẫn /series/bộ/số
-    const base = brief.image || d.image;
-    let image = base ? `${base}/high.png` : '';
-    if (!image && setDetail.serie && setDetail.serie.id) {
-        image = `https://assets.tcgdex.net/en/${setDetail.serie.id}/${setId}/${brief.localId}/high.png`;
+        const all = await loadPokemonData();
+        const bySet = new Map();
+        all.forEach(c => {
+            if (!bySet.has(c.set)) bySet.set(c.set, { id: c.set, name: c.setName, count: 0, releaseDate: c.releaseDate || '' });
+            bySet.get(c.set).count++;
+        });
+        const sets = [...bySet.values()].sort((a, b) =>
+            (b.releaseDate || '').localeCompare(a.releaseDate || '') || a.name.localeCompare(b.name));
+        if (!DEFAULT_POKEMON_SET && sets.length) DEFAULT_POKEMON_SET = sets[0].id;
+        console.log(`✅ Pokémon: ${all.length} thẻ, ${sets.length} bộ (từ ${POKEMON_DATA_URL})`);
+        return sets;
+    } catch (error) {
+        console.error('Lỗi tải pokemon.json:', error);
+        return [];
     }
-
-    // Loại thẻ: Pokemon / Trainer / Energy + hậu tố (ex, V, VMAX, GX...) + giai đoạn tiến hóa
-    const typeParts = [d.category, d.suffix, d.stage, d.trainerType, d.energyType].filter(Boolean);
-
-    // Nội dung: ability, attack, hiệu ứng trainer
-    const lines = [];
-    (d.abilities || []).forEach(a =>
-        lines.push(`[${a.type || 'Ability'}] ${a.name}${a.effect ? ': ' + a.effect : ''}`));
-    (d.attacks || []).forEach(a => {
-        const cost = (a.cost || []).length ? `[${a.cost.join('/')}] ` : '';
-        lines.push(`${cost}${a.name}${a.damage ? ' — ' + a.damage : ''}${a.effect ? '\n' + a.effect : ''}`);
-    });
-    if (d.effect) lines.push(d.effect);
-
-    return {
-        tcg: 'pokemon',
-        code: brief.id,
-        name: brief.name,
-        set: setId,
-        setName: setDetail.name || 'Pokémon TCG',
-        number: brief.localId || '',
-        rarity: d.rarity || 'Unspecified',
-        domain: (d.types || []).join(', '),
-        type: typeParts.join(', '),
-        image,
-        artist: d.illustrator || '',
-        hp: d.hp ?? '',
-        stage: d.stage || '',
-        retreat: d.retreat ?? '',
-        energy: '', power: '', might: '',
-        ability: lines.join('\n'),
-        flavor: d.description || '',
-        market: extractMarket(d.pricing),
-        tags: [
-            d.regulationMark ? 'Regulation ' + d.regulationMark : '',
-            d.evolveFrom ? 'Evolves from ' + d.evolveFrom : ''
-        ].filter(Boolean)
-    };
 }
 
-// onProgress(list, done, total): gọi ngay khi có danh sách tóm tắt, rồi mỗi 20 lá được bổ sung chi tiết
+// Giữ nguyên chữ ký cũ: onProgress(list, done, total). Không còn gọi API nên xong ngay.
 async function fetchCardsBySet(setId, onProgress = () => {}) {
     try {
-        const cached = readPokemonCache(setId);
-        if (cached) {
-            onProgress(cached, cached.length, cached.length);
-            return cached;
-        }
-
-        const setDetail = await fetchJSON(`${TCGDEX}/sets/${setId}`);
-        const briefs = setDetail.cards || [];
-        const full = briefs.map(b => pokemonCard(setDetail, b));
-        onProgress(full.slice(), 0, briefs.length);
-
-        let done = 0, failed = 0;
-        await mapLimit(briefs, 8, async (b, i) => {
-            try {
-                full[i] = pokemonCard(setDetail, b, await fetchJSON(`${TCGDEX}/cards/${b.id}`));
-            } catch (e) {
-                failed++;                       // giữ bản tóm tắt cho lá này
-            }
-            done++;
-            if (done % 20 === 0 || done === briefs.length) onProgress(full.slice(), done, briefs.length);
-        });
-
-        if (!failed) writePokemonCache(setId, full);
-        return full;
+        const all = await loadPokemonData();
+        const list = setId && setId !== 'all' ? all.filter(c => c.set === setId) : all.slice();
+        onProgress(list, list.length, list.length);
+        return list;
     } catch (error) {
-        console.error(`Lỗi khi tải bộ bài ${setId}:`, error);
+        console.error(`Lỗi khi đọc bộ bài ${setId}:`, error);
         return [];
     }
 }
@@ -701,45 +658,30 @@ function fillPokemonSetSelect(selected = DEFAULT_POKEMON_SET) {
     pokemonSetsList.forEach(s => {
         const opt = document.createElement('option');
         opt.value = s.id;
-        opt.textContent = `${s.name} (${s.id.toUpperCase()})`;
+        opt.textContent = `${s.name} (${String(s.id).toUpperCase()})`;
         el.appendChild(opt);
     });
-    el.value = selected;
+    el.value = selected || 'all';
 }
 
 async function loadPokemonSet(setId) {
     const token = ++pokemonToken;
-    await fetchCardsBySet(setId, (list, done, total) => {
+    await fetchCardsBySet(setId, (list) => {
         if (token !== pokemonToken) return;     // đã đổi sang bộ/game khác
-        list.forEach(c => { if (c.market) embeddedPrices[c.code] = c.market; });
-        cards = list;
-        page = 1;
-        buildFilters();
-        render();
-        if (done < total) {
-            $('#resultCount').textContent += ` · đang tải chi tiết ${done}/${total}`;
-        }
+        showCards(list);
     });
 }
-
 // ---- One Piece: dữ liệu tạo bởi update-onepiece.js ----
 async function loadOnePiece() {
+    let list = [];
     try {
         const res = await fetch('data/onepiece.json', { cache: 'no-cache' });
         if (!res.ok) throw new Error(res.status);
-        const list = await res.json();
-        list.forEach(c => { if (c.market) embeddedPrices[c.code] = c.market; });
-        cards = list;
+        list = await res.json();
     } catch (e) {
         console.warn('Không tải được data/onepiece.json', e);
-        cards = [];
     }
-    page = 1;
-    buildFilters();
-    render();
-    if (!cards.length) {
-        $('#resultCount').textContent = 'Chưa có dữ liệu One Piece (data/onepiece.json)';
-    }
+    showCards(list, 'Chưa có dữ liệu One Piece (data/onepiece.json)');
 }
 
 // ---- Yu-Gi-Oh!: API YGOPRODeck (db.ygoprodeck.com), tải theo từng bộ giống Pokémon ----
@@ -794,6 +736,25 @@ function ensureYgoSearch() {
     sel.parentNode.insertBefore(ygoSearchEl, sel);
 }
 
+// Ô chọn bộ gom theo năm. rows: [{ value, text, group }] đã xếp mới -> cũ nên các năm nằm liền nhau
+function fillGroupedSelect(el, rows, selected) {
+    el.innerHTML = '<option value="all">All Sets</option>';
+    let groupEl = null, groupName = null;
+    rows.forEach(r => {
+        if (r.group !== groupName) {
+            groupName = r.group;
+            groupEl = document.createElement('optgroup');
+            groupEl.label = groupName;
+            el.appendChild(groupEl);
+        }
+        const opt = document.createElement('option');
+        opt.value = r.value;
+        opt.textContent = r.text;
+        groupEl.appendChild(opt);
+    });
+    el.value = [...el.options].some(o => o.value === selected) ? selected : 'all';
+}
+
 function fillYugiohSetSelect(selected = ygoDefaultSet(), query = '') {
     const el = $('#setFilter');
     if (!el) return;
@@ -815,21 +776,7 @@ function fillYugiohSetSelect(selected = ygoDefaultSet(), query = '') {
     const q = query.trim().toLowerCase();
     rows = rows.filter(r => !q || r.text.toLowerCase().includes(q) || r.group === q || r.value === ygoCurrent);
 
-    el.innerHTML = '<option value="all">All Sets</option>';
-    let groupEl = null, groupName = null;
-    rows.forEach(r => {                           // danh sách đã xếp mới -> cũ nên các năm nằm liền nhau
-        if (r.group !== groupName) {
-            groupName = r.group;
-            groupEl = document.createElement('optgroup');
-            groupEl.label = groupName;
-            el.appendChild(groupEl);
-        }
-        const opt = document.createElement('option');
-        opt.value = r.value;
-        opt.textContent = r.text;
-        groupEl.appendChild(opt);
-    });
-    el.value = [...el.options].some(o => o.value === selected) ? selected : 'all';
+    fillGroupedSelect(el, rows, selected);
 }
 
 // Điểm độ hiếm Yu-Gi-Oh! để chọn độ hiếm cao nhất làm độ hiếm hiển thị
@@ -923,12 +870,7 @@ async function loadYugiohSet(setId) {
     $('#resultCount').textContent = 'Đang tải bộ bài...';
     const list = ygoMode === 'file' ? await fetchYugiohFile(setId) : await fetchYugiohCardsBySet(setId);
     if (token !== pokemonToken) return;          // đã đổi sang bộ/game khác
-    list.forEach(c => { if (c.market) embeddedPrices[c.code] = c.market; });
-    cards = list;
-    page = 1;
-    buildFilters();
-    render();
-    if (!cards.length) $('#resultCount').textContent = 'Bộ này chưa có thẻ';
+    showCards(list, 'Bộ này chưa có thẻ');
 }
 
 async function loadYugioh() {
@@ -1000,24 +942,84 @@ function jsonCard(c, tcg) {
 
 async function loadJsonGame(tcg) {
     const g = JSON_GAMES[tcg];
+    let list = [];
     try {
         const res = await fetch(g.file, { cache: 'no-cache' });
         if (!res.ok) throw new Error(res.status);
         const data = await res.json();
         const raw = Array.isArray(data) ? data : (data.cards || data.data || []);
-        const list = raw.map(c => jsonCard(c, tcg)).filter(c => c.code);
-        list.forEach(c => { if (c.market) embeddedPrices[c.code] = c.market; });
-        cards = list;
+        list = raw.map(c => jsonCard(c, tcg)).filter(c => c.code);
     } catch (e) {
         console.warn('Không tải được ' + g.file, e);
-        cards = [];
     }
-    page = 1;
-    buildFilters();
-    render();
-    if (!cards.length) {
-        $('#resultCount').textContent = `Chưa có dữ liệu ${g.label} (${g.file})`;
+    showCards(list, `Chưa có dữ liệu ${g.label} (${g.file})`);
+}
+
+// ---- Game đọc theo bộ từ data/<folder>/ (tạo bởi update-kayou.js) ----
+// Thêm game cùng kiểu: 1 dòng ở FILE_GAMES + 1 dòng ở GAME_BRAND (+ IPS trong update-kayou.js).
+// Bộ mới tự hiện: chạy script -> index.json được ghi lại -> web đọc index.json mỗi lần mở game.
+// ws: true = thẻ Weiss Schwarz (tạo bởi update-ws.js từ en.ws-tcg.com/cardlist)
+const FILE_GAMES = {
+    naruto:   { name: 'Naruto', folder: 'naruto' },
+    aot:      { name: 'Attack on Titan · WS',      folder: 'aot',      ws: true, script: 'update-ws.js' },
+    overlord: { name: 'Overlord · WS',             folder: 'overlord', ws: true, script: 'update-ws.js' },
+    rascal:   { name: 'Rascal Does Not Dream · WS', folder: 'rascal',   ws: true, script: 'update-ws.js' }
+};
+const fileState = {};          // tcg -> { sets, version }
+
+// Chưa có nguồn giá cho KAYOU -> mở eBay tìm đúng thẻ (tên thẻ + mã độ hiếm)
+const ebaySearchURL = card => {
+    const g = FILE_GAMES[card.tcg];
+    const q = g.ws
+        ? `Weiss Schwarz ${card.number} ${card.name}`
+        : `Kayou ${g.name} ${card.name} ${card.tags[0] || ''}`;
+    return 'https://www.ebay.com/sch/i.html?_nkw=' + encodeURIComponent(q);
+};
+
+async function fetchFileSet(tcg, id) {
+    const { folder } = FILE_GAMES[tcg];
+    try {
+        return await fetchJSON(`data/${folder}/${encodeURIComponent(id)}.json?v=${encodeURIComponent(fileState[tcg].version)}`);
+    } catch (e) {
+        console.warn(`Không tải được bộ ${id} (${tcg})`, e);
+        return [];
     }
+}
+
+// setId = 'all' -> gộp mọi bộ của game
+async function loadFileSet(tcg, setId) {
+    const token = ++pokemonToken;
+    $('#resultCount').textContent = 'Đang tải bộ bài...';
+    const ids = setId === 'all' ? fileState[tcg].sets.map(s => s.id) : [setId];
+    const list = (await Promise.all(ids.map(id => fetchFileSet(tcg, id)))).flat();
+    if (token !== pokemonToken) return;          // đã đổi sang bộ/game khác
+    showCards(list, 'Bộ này chưa có thẻ');
+}
+
+async function loadFileGame(tcg) {
+    const { name, folder } = FILE_GAMES[tcg];
+    const token = ++pokemonToken;
+    $('#resultCount').textContent = `Đang tải ${name}...`;
+    try {
+        const res = await fetch(`data/${folder}/index.json`, { cache: 'no-cache' });
+        if (!res.ok) throw new Error(res.status);
+        const idx = await res.json();
+        fileState[tcg] = { sets: idx.sets || [], version: idx.updated || '' };
+    } catch (e) {
+        console.warn(`Không tải được data/${folder}/index.json`, e);
+        fileState[tcg] = { sets: [], version: '' };
+    }
+    if (token !== pokemonToken) return;
+
+    const { sets } = fileState[tcg];
+    fillGroupedSelect($('#setFilter'), sets.map(s => ({
+        value: s.id,
+        text: `${s.name}${s.abbreviation ? ` (${s.abbreviation})` : ''} · ${s.count}`,
+        group: String(s.published || '').slice(0, 4) || 'Khác'
+    })), sets[0] && sets[0].id);
+
+    if (!sets.length) return showCards([], `Chưa có dữ liệu ${name} (chạy ${FILE_GAMES[tcg].script || 'update-kayou.js'})`);
+    await loadFileSet(tcg, sets[0].id);
 }
 
 // ---- Danh sách game TCG trong dropdown ----
@@ -1030,7 +1032,8 @@ const TCG_GAMES = [
     { id: 'mtg',       name: 'Magic: The Gathering',  icon: '✺', soon: true },
     { id: 'yugioh',    name: 'Yu-Gi-Oh!',             icon: '◈', load: async () => { await loadYugioh(); } },
     { id: 'gundam',    name: 'Gundam Card Game',      icon: '⬡', load: async () => { pokemonToken++; await loadJsonGame('gundam'); } },
-    { id: 'dbs',       name: 'Dragon Ball Super CG',  icon: '❂', load: async () => { pokemonToken++; await loadJsonGame('dbs'); } }
+    { id: 'dbs',       name: 'Dragon Ball Super CG',  icon: '❂', load: async () => { pokemonToken++; await loadJsonGame('dbs'); } },
+    ...Object.entries(FILE_GAMES).map(([id, g]) => ({ id, name: g.name, load: () => loadFileGame(id) }))
 ];
 let currentGame = 'pokemon';
 
@@ -1106,6 +1109,7 @@ async function init() {
 
     $('#setFilter').addEventListener('change', e => {
         const v = e.target.value;
+        if (FILE_GAMES[currentGame]) { loadFileSet(currentGame, v); return; }
         if (v !== 'all' && currentGame === 'pokemon') { loadPokemonSet(v); return; }
         if (v !== 'all' && currentGame === 'yugioh') { loadYugiohSet(v); return; }
         page = 1;               // các game còn lại (và "All Sets"): lọc ngay trên danh sách đã tải
@@ -1287,7 +1291,11 @@ const GAME_BRAND = {
     mtg:       { c1: '#A3E635', c2: '#4D9F0C', glyph: '<circle cx="24" cy="9" r="6"/><circle cx="39" cy="20" r="6"/><circle cx="33" cy="38" r="6"/><circle cx="15" cy="38" r="6"/><circle cx="9" cy="20" r="6"/>' },
     yugioh:    { c1: '#9B6BFF', c2: '#5B21B6', glyph: '<path d="M24 6 43 40H5z" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linejoin="round"/><circle cx="24" cy="29" r="5.5"/>' },
     gundam:    { c1: '#5B8CFF', c2: '#1D4ED8', glyph: '<path d="M24 36 9 10h7l8 14 8-14h7z"/><rect x="18" y="37" width="12" height="7" rx="2"/>' },
-    dbs:       { c1: '#FFA53D', c2: '#EA580C', glyph: '<circle cx="24" cy="24" r="18" fill="none" stroke="currentColor" stroke-width="4"/><path d="M24 14l2.8 6 6.5.8-4.8 4.5 1.3 6.4-5.8-3.2-5.8 3.2 1.3-6.4-4.8-4.5 6.5-.8z"/>' }
+    dbs:       { c1: '#FFA53D', c2: '#EA580C', glyph: '<circle cx="24" cy="24" r="18" fill="none" stroke="currentColor" stroke-width="4"/><path d="M24 14l2.8 6 6.5.8-4.8 4.5 1.3 6.4-5.8-3.2-5.8 3.2 1.3-6.4-4.8-4.5 6.5-.8z"/>' },
+    aot:       { c1: '#4ADE80', c2: '#15803D', glyph: '<path d="M6 40 20 8l4 14-8 18zM42 40 28 8l-4 14 8 18z"/>' },
+    overlord:  { c1: '#A78BFA', c2: '#4C1D95', glyph: '<circle cx="24" cy="24" r="16" fill="none" stroke="currentColor" stroke-width="5"/><path d="M24 14l6 10-6 10-6-10z"/>' },
+    rascal:    { c1: '#F9A8D4', c2: '#BE185D', glyph: '<ellipse cx="17" cy="14" rx="5" ry="11"/><ellipse cx="31" cy="14" rx="5" ry="11"/><circle cx="24" cy="33" r="11"/>' },
+    naruto:    { c1: '#FF9F1C', c2: '#E85D04', glyph: '<path d="M24 6a18 18 0 1 0 18 18 12 12 0 1 0-12 12 7 7 0 1 0 7-7" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>' }
 };
 
 const LOGO_FILE_OK = {};        // id -> true nếu có file assets/logos/<id>.png

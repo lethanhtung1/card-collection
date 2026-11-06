@@ -1,0 +1,33 @@
+{
+ "updated": "2026-11-06T06:58:55.326Z",
+ "sets": [
+  {
+   "id": "BRO2022",
+   "name": "BRO2022",
+   "abbreviation": "AOT",
+   "count": 1,
+   "published": ""
+  },
+  {
+   "id": "SX04",
+   "name": "Attack On Titan: Final Season",
+   "abbreviation": "AOT",
+   "count": 200,
+   "published": ""
+  },
+  {
+   "id": "S50",
+   "name": "S50",
+   "abbreviation": "AOT",
+   "count": 147,
+   "published": ""
+  },
+  {
+   "id": "S35",
+   "name": "S35",
+   "abbreviation": "AOT",
+   "count": 166,
+   "published": ""
+  }
+ ]
+}

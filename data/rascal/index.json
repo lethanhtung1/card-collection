@@ -1,0 +1,54 @@
+{
+ "updated": "2026-11-06T07:00:12.033Z",
+ "sets": [
+  {
+   "id": "W136",
+   "name": "W136",
+   "abbreviation": "SBY",
+   "count": 222,
+   "published": ""
+  },
+  {
+   "id": "BSF2025",
+   "name": "BSF2025",
+   "abbreviation": "SBY",
+   "count": 4,
+   "published": ""
+  },
+  {
+   "id": "W114",
+   "name": "Rascal Does Not Dream Series",
+   "abbreviation": "SBY",
+   "count": 207,
+   "published": ""
+  },
+  {
+   "id": "WS02",
+   "name": "WS02",
+   "abbreviation": "Gby",
+   "count": 8,
+   "published": ""
+  },
+  {
+   "id": "W77",
+   "name": "W77",
+   "abbreviation": "SBY",
+   "count": 150,
+   "published": ""
+  },
+  {
+   "id": "W64",
+   "name": "W64",
+   "abbreviation": "SBY",
+   "count": 167,
+   "published": ""
+  },
+  {
+   "id": "BCS2019",
+   "name": "BCS2019",
+   "abbreviation": "SBY",
+   "count": 1,
+   "published": ""
+  }
+ ]
+}
