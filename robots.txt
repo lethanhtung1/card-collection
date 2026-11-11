@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://lethanhtung1.github.io/card-collection/sitemap.xml
