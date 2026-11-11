@@ -1,0 +1,36 @@
+/* pack-polish.css — nạp SAU Packstyle.css. Sửa chữ lồng nhau ở màn xé pack, không đổi HTML/JS.
+ * Gốc lỗi: dòng gợi ý .tear-hint nằm tuyệt đối đè lên .note; chú thích .stage-cap và nút "Xé nhanh" chồng lên nhau.
+ * Cách sửa: gỡ dòng gợi ý cũ (pack.js đã có gợi ý mới trong chú thích) và xếp pack -> chú thích -> nút theo cột, có khoảng cách rõ. */
+
+/* dòng ghi chú trên cùng: gọn, cách pack một đoạn */
+.note { max-width: 640px; margin: 14px auto 18px; padding: 8px 16px; text-align: center; font-size: 12.5px; line-height: 1.45;
+    color: #8fa3c7; background: #ffffff08; border: 1px solid #ffffff12; border-radius: 12px; }
+
+/* gợi ý kéo cũ trùng với gợi ý trong chú thích -> bỏ */
+#stage .tear-hint { display: none; }
+
+/* màn xé pack: xếp dọc, không ai đè ai */
+#stage { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; padding: 10px 16px 40px; }
+#stage .pack-wrap { position: relative; margin: 0 auto; filter: drop-shadow(0 24px 30px #000a) drop-shadow(0 0 40px #ffcb0522); }
+
+/* chú thích dưới pack */
+#stage #stageCap { position: static; transform: none; margin: 0; max-width: 420px; text-align: center; font-size: 15px; font-weight: 600; line-height: 1.4; color: #e8eefb; }
+#stage #stageCap small, #stage #stageCap .tr-hint { display: block; margin-top: 6px; font-size: 12px; font-weight: 400; color: #8fa3c7; }
+
+/* nút Xé nhanh: nằm dưới chú thích, kiểu nút phụ */
+#stage .tr-quick { position: static; display: block; margin: 0 auto; padding: 10px 22px; font-size: 14px; font-weight: 700; color: #2a1700;
+    background: linear-gradient(#ffe27a, #ffcb05); border: 0; border-radius: 999px; box-shadow: 0 3px 0 #b8860b, 0 8px 18px #0008; transition: transform .12s, box-shadow .12s; }
+#stage .tr-quick:hover { transform: translateY(-1px); }
+#stage .tr-quick:active { transform: translateY(2px); box-shadow: 0 1px 0 #b8860b; }
+
+@media (max-width: 600px) { #stage { gap: 16px; } .note { margin: 10px 12px 14px; font-size: 12px; } }
+
+/* nút xé hộp 36 pack */
+#stage .tr-box { position: static; display: block; margin: 0 auto; padding: 9px 20px; font: 700 13.5px system-ui, sans-serif; color: #ffe27a; background: #ffcb0514;
+    border: 1px solid #ffcb0566; border-radius: 999px; cursor: pointer; }
+#stage .tr-box:hover { background: #ffcb0526; border-color: #ffcb05; }
+#stage .tr-box.is-hidden { visibility: hidden; }
+
+/* nút xem thêm ở bảng kết quả hộp */
+#summary .rs-more { display: block; width: 100%; margin: 10px 0 0; padding: 9px; font: 700 13px system-ui, sans-serif; color: #ffe27a; background: #ffffff0a; border: 1px dashed #ffcb0555; border-radius: 10px; cursor: pointer; }
+#summary .rs-more:hover { border-color: #ffcb05; background: #ffcb0514; }

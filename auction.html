@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sàn đấu giá · CheckPrice</title>
+  <link rel="stylesheet" href="Pack.css">
+  <link rel="stylesheet" href="pack-polish.css">
+<style>
+.au-page{max-width:1100px;margin:0 auto;padding:0 16px 40px}
+.au-intro{color:var(--muted,#a7b3c7);font-size:13px;margin:16px 0 14px;max-width:70ch}
+.au-adminbar{display:flex;justify-content:flex-end;margin-bottom:12px}
+.au-adminbar[hidden]{display:none}
+.au-danger{height:34px;padding:0 14px;border-radius:99px;border:1px solid #ef444466;background:#2a1216;color:#fca5a5;font:700 12px system-ui,sans-serif;cursor:pointer}
+.au-danger:hover:not(:disabled),.au-danger:focus-visible{background:#3b1519;outline:none}
+.au-danger:disabled{opacity:.5;cursor:default}
+</style>
+</head>
+<body>
+<header>
+    <h1>🔨 Đấu giá</h1>
+    <span class="spacer"></span>
+    <a class="btn" href="pack.html">🎴 Xé pack</a>
+    <a class="btn" href="binder.html">📚 Bộ sưu tập</a>
+    <span id="wlPill" style="font:700 13px system-ui,sans-serif;padding:7px 12px;border-radius:99px;border:1px solid #ffcb0538;background:#121b33;color:#ffe27a;white-space:nowrap">Ví …</span>
+</header>
+<main>
+  <div class="au-page">
+    <p class="au-intro">Lá bài do người chơi phá sản nộp lên. Đặt giá để mua, thắng thì bấm “Nhận lá &amp; thanh toán” để đưa vào binder của bạn.</p>
+    <div class="au-adminbar" id="adminBar" hidden><button class="au-danger" id="clearAll" title="Xoá toàn bộ lô đang trên sàn (chỉ admin)">🗑 Xoá hết lô</button></div>
+    <div id="auctionHost" aria-live="polite"></div>
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="supabase-config.js"></script>
+<script src="binder-store.js"></script>
+<script src="wallet.js"></script>
+<script src="auction.js"></script>
+<script src="cloud-auth.js"></script>
+<script>
+/* Nối sàn đấu giá với client Supabase của trang (tự dò tên phổ biến) */
+(function () {
+  if (!window.Auction) { console.warn('[auction] chưa nạp được auction.js'); return; }
+  const ok = c => c && typeof c.rpc === 'function' && c.auth;
+  let c = null;
+  const tries = [
+    () => typeof supabaseClient !== 'undefined' && supabaseClient, () => typeof sb !== 'undefined' && sb,
+    () => typeof sbClient !== 'undefined' && sbClient, () => typeof db !== 'undefined' && db,
+    () => typeof client !== 'undefined' && client, () => typeof supa !== 'undefined' && supa,
+    () => typeof _supabase !== 'undefined' && _supabase
+  ];
+  for (const f of tries) { try { const v = f(); if (ok(v)) { c = v; break; } } catch (e) { /* bỏ qua */ } }
+  if (!c) for (const k of Object.keys(window)) { try { if (ok(window[k])) { c = window[k]; break; } } catch (e) { /* bỏ qua */ } }
+  if (c) { Auction.init(c); console.log('[auction] đã nối client Supabase'); }
+  else console.warn('[auction] không tìm thấy client Supabase — cần biết tên biến trong supabase-config.js');
+})();
+</script>
+<script>
+(function () {
+  const host = document.getElementById('auctionHost');
+
+  async function setupAdmin() {
+    const bar = document.getElementById('adminBar'), btn = document.getElementById('clearAll');
+    const say = m => window.Wallet ? Wallet.notify(m) : alert(m);
+    let admin = false;
+    try { admin = await Auction.isAdmin(); } catch (e) { /* không phải admin */ }
+    bar.hidden = !admin;
+    if (!admin) return;
+    btn.onclick = async () => {
+      if (!confirm('Xoá toàn bộ lô trên sàn? Lô đã có người thắng mà chưa nhận lá sẽ được giữ lại.')) return;
+      btn.disabled = true;
+      try { const n = await Auction.adminClear(); say('Đã xoá ' + n + ' lô.'); }
+      catch (e) { say('Không xoá được: ' + (e.message || e)); }
+      btn.disabled = false; Auction.reload();
+    };
+  }
+
+  async function start() {
+    try { if (window.BinderStore && BinderStore.ready) await BinderStore.ready; } catch (e) { /* vẫn mount, Auction tự báo lỗi */ }
+    if (window.Wallet) Wallet.refresh();
+    if (!window.Auction) { host.innerHTML = '<p class="au-intro">Chưa nạp được <b>auction.js</b>. Hãy đặt file này cùng thư mục với auction.html rồi tải lại trang (Ctrl+F5).</p>'; return; }
+    Auction.mount(host);
+    setupAdmin();
+  }
+
+  window.addEventListener('pagehide', () => { if (window.Auction) Auction.unmount(); });
+  document.addEventListener('DOMContentLoaded', start);
+})();
+</script>
+</body>
+</html>

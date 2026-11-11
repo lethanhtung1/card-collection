@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Xé pack · CheckPrice</title>
+  <link rel="stylesheet" href="pack.css">
+</head>
+<body>
+<header>
+    <h1>Xé pack</h1>
+    <select id="game" aria-label="Chọn game"></select>
+    <button id="pickOther" hidden>↩ Chọn pack khác</button>
+    <span class="spacer"></span>
+    <a class="btn" href="binder.html" title="Xem các lá bài đã xé"> Bộ sưu tập <small id="collCount"></small></a>
+    <a class="btn" href="auction.html" title="Đấu giá các lá bài do người chơi phá sản nộp lên"> Đấu giá</a>
+    <button id="achBtn" title="Xem thành tích của bạn"> Thành tích <small id="achCount"></small></button>
+    <a class="btn" href="index.html">← Về trang tra giá</a>
+</header>
+<main>
+    <div class="note">Mô phỏng để giải trí: số lá và tỉ lệ ra thẻ hiếm là ước lượng, không phải tỉ lệ chính thức của hãng.</div>
+    <div id="status" class="status">Đang tải...</div>
+
+    <section id="picker" hidden>
+        <div class="p-title">Chọn pack muốn <b>xé</b></div>
+        <div class="p-sub">Lướt hoặc kéo để chọn bộ · xem trước lá hit · bấm vào pack giữa để xé</div>
+        <div class="p-tools">
+            <div class="chips" id="chips"></div>
+            <input id="q" type="search" placeholder="Tìm bộ..." aria-label="Tìm bộ">
+        </div>
+        <div class="cf" id="cf">
+            <div class="cf-track" id="cfTrack"></div>
+            <button class="cf-arrow prev" id="cfPrev" aria-label="Pack trước">‹</button>
+            <button class="cf-arrow next" id="cfNext" aria-label="Pack sau">›</button>
+        </div>
+        <div class="cf-empty" id="cfEmpty" hidden>Không có bộ nào khớp.</div>
+        <div class="scrub-row" id="scrubRow"><input id="scrub" type="range" min="0" max="0" value="0" aria-label="Lướt qua các bộ"><span id="cfCount"></span></div>
+        <div class="detail" id="detail"></div>
+    </section>
+
+    <section id="stage" class="stage" hidden>
+        <div class="pack-wrap" id="packWrap" tabindex="0" role="button" aria-label="Kéo ngang hoặc nhấn Enter để xé pack">
+            <div class="tear-hint">Kéo ngang qua đỉnh pack để xé (hoặc nhấn Enter)</div>
+            <div class="tear-line"></div>
+            <div class="pack" id="stagePack"></div>
+        </div>
+        <div class="stage-cap" id="stageCap"></div>
+    </section>
+
+    <section id="reveal" class="reveal">
+        <div class="card-stage"><div class="burst" id="burst"></div>
+            <div class="flip" id="flip"><div class="face back" id="backFace"></div><div class="face front" id="frontFace"></div></div>
+        </div>
+        <div class="meta"><b id="cName"></b><span class="badge" id="cRar"></span><div class="counter" id="cCount"></div></div>
+        <div class="strip" id="strip"></div>
+        <div class="actions"><button id="next" class="primary">Lật lá bài</button><button id="all">Lật tất cả</button></div>
+    </section>
+
+    <section id="summary" class="summary">
+        <h2>Kết quả pack</h2>
+        <div class="sum-stats" id="sumStats"></div>
+        <div class="grid" id="sumGrid"></div>
+        <div class="actions" style="margin-top:18px"><button id="again2" class="primary">Mở pack tiếp</button><button id="pickOther2">Chọn pack khác</button></div>
+        <div class="session" id="session"></div>
+    </section>
+</main>
+<div class="modal" id="hitsModal"><div class="modal-box">
+    <div class="modal-head"><h3 id="hitsTitle"></h3><button id="hitsClose">Đóng ✕</button></div>
+    <div class="grid" id="hitsGrid"></div>
+</div></div>
+<div class="modal" id="achModal"><div class="modal-box">
+    <div class="modal-head"><h3 id="achTitle"></h3><button id="achClose">Đóng ✕</button></div>
+    <div class="ach-sum" id="achSum"></div>
+    <div class="ach-grid" id="achGrid"></div>
+</div></div>
+<div class="modal" id="gradeModal"><div class="modal-box g-box" id="gradeBody"></div></div>
+<div class="zoom" id="zoom"><img alt=""></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="supabase-config.js"></script>
+<script src="binder-store.js"></script>
+<script src="wallet.js"></script>
+<script src="auction.js"></script>
+<script src="cloud-auth.js"></script>
+<script>
+(function () {
+  if (!window.Auction) return;
+  const c = window.sb || window.supabaseClient || (window.BinderStore && window.BinderStore.client);
+  if (c && typeof c.rpc === 'function') Auction.init(c);
+})();
+</script>
+<script src="pack.js"></script>
+</body>
+</html>

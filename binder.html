@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#050a14">
+<title>Sổ   —   Xé Pack</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sigmar&family=Baloo+2:wght@600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700&family=Roboto+Condensed:wght@600;700;800&display=swap&subset=vietnamese" rel="stylesheet">
+
+<!-- 1. Thư viện Supabase JS Client -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+
+<!-- 2. Tệp cấu hình Supabase -->
+<script src="supabase-config.js"></script>
+
+<!-- 3. Kho lưu trữ binder trên mây -->
+<script src="binder-store.js"></script>
+<script src="wallet.js"></script>
+
+<!-- 4. Tệp quản lý đăng nhập / xác thực -->
+<script src="cloud-auth.js"></script>
+
+<style>
+:root {
+    --bg0: #050a14; --bg1: #0a1528; --bg2: #10213d;
+    --gold: #ffcb05; --gold2: #ffe27a; --gold3: #c79a00;
+    --blue: #2a75bb; --ink: #f3f6fb; --muted: #a7b3c7; --dim: #6c7a92;
+    --line: #ffcb0538; --card: #0c172beb; --card2: #14223cd9; --brd: #ffffff17;
+    --red: #e3350d; --green: #4ade80; --pink: #fb7185;
+    --f-poke: "Sigmar", "Baloo 2", ui-rounded, system-ui, sans-serif;
+    --f-display: "Baloo 2", ui-rounded, system-ui, sans-serif;
+    --f-body: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --c1: #da371a; --c2: #21100d;               /* màu bìa binder (đổi ở tab Trang trí) */
+    color-scheme: dark;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { background: var(--bg0); overflow-x: clip; }
+body { min-height: 100dvh; color: var(--ink); font: 15px/1.5 var(--f-body); overflow-x: clip; -webkit-tap-highlight-color: transparent;
+    background:
+        radial-gradient(1.5px 1.5px at 12% 22%, #fff9, transparent 60%), radial-gradient(1.5px 1.5px at 78% 12%, #fff8, transparent 60%),
+        radial-gradient(1px 1px at 44% 64%, #fff8, transparent 60%), radial-gradient(1.5px 1.5px at 90% 70%, #fff7, transparent 60%),
+        radial-gradient(1px 1px at 28% 88%, #fff7, transparent 60%), radial-gradient(1000px 520px at 75% -8%, #1d3c7a66, transparent 70%),
+        linear-gradient(#050a14, #0a1528 55%, #050a14); background-attachment: fixed; }
+button { font: inherit; color: inherit; cursor: pointer; }
+a { color: inherit; }
+[hidden] { display: none !important; }
+
+/* ===== khung trang ===== */
+.sv-top { max-width: 1240px; margin: 0 auto; padding: 12px 16px 0; display: flex; align-items: center; gap: 12px; }
+.sv-back { color: var(--gold2); text-decoration: none; font-weight: 700; font-size: 13px; }
+.sv-back:hover { text-decoration: underline; }
+.sv-brand { font: 22px var(--f-poke); color: var(--gold); text-shadow: 0 2px 0 #7a4a00, 0 0 18px #ffcb0555; margin-left: auto; margin-right: auto; letter-spacing: .02em; }
+.sv-wallet { font: 800 13px var(--f-display); background: var(--card); border: 1px solid var(--line); color: var(--gold2); padding: 5px 12px; border-radius: 99px; white-space: nowrap; }
+.sv-wrap { max-width: 1240px; margin: 0 auto; padding: 14px 16px 90px; display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 22px; align-items: start; }
+.sv-title { font: 26px var(--f-poke); color: #fff; margin: 4px 0 0; text-shadow: 0 3px 0 #0a2a66; }
+
+/* ===== cột trái: trainer card ===== */
+.sv-side { display: grid; gap: 12px; }
+.sv-tc { position: relative; overflow: hidden; border-radius: 18px; padding: 14px; border: 2px solid var(--gold);
+    background: linear-gradient(160deg, #1f55a8, #112c5a 55%, #0b1d3f); box-shadow: 0 12px 30px #000a, inset 0 1px 0 #ffffff40; }
+.sv-tc::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(circle at 92% 8%, #ffffff26, transparent 45%); }
+.sv-kicker { font: 800 10px var(--f-display); letter-spacing: .14em; text-transform: uppercase; color: var(--gold2); }
+.sv-me { display: flex; gap: 10px; align-items: center; margin: 10px 0 12px; }
+.sv-av { flex: none; width: 48px; height: 48px; border-radius: 13px; display: grid; place-items: center; font: 24px var(--f-poke); color: #fff; border: 2px solid #ffffff66;
+    background: linear-gradient(160deg, #7db2ff, #2a5fc0); text-transform: uppercase; }
+.sv-name { font: 20px/1.1 var(--f-poke); color: #fff; cursor: pointer; display: block; overflow-wrap: anywhere; }
+.sv-name:hover { text-decoration: underline dotted; }
+.sv-join { font-size: 11px; color: #cfe0ff; }
+.sv-rank { display: inline-flex; margin-top: 3px; font: 800 10px var(--f-display); padding: 2px 9px; border-radius: 99px; background: #ff7ab8; color: #4a0030; }
+.sv-pts { width: 100%; display: flex; justify-between: space-between; align-items: center; gap: 8px; text-align: left; border-radius: 12px; padding: 8px 12px;
+    background: #081a3c99; border: 1px solid #ffffff26; }
+.sv-pts small { display: block; font: 700 9px var(--f-display); letter-spacing: .1em; text-transform: uppercase; color: #b9cdf2; }
+.sv-pts b { font: 800 26px/1.1 var(--f-display); color: var(--green); }
+.sv-pts.neg b { color: var(--pink); }
+.sv-money { display: grid; gap: 2px; font-size: 10.5px; color: #cfe0ff; text-align: right; }
+.sv-badges { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+.sv-badge { display: flex; flex-direction: column; padding: 7px 10px; border-radius: 10px; border: 1px solid #ffffff30; background: linear-gradient(160deg, #ffffff1c, #ffffff08); }
+.sv-badge b { font: 800 19px/1.05 var(--f-display); }
+.sv-badge span { font-size: 10px; color: #cfe0ff; }
+.sv-ms { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 10px; min-height: 28px; }
+.sv-ms span { width: 28px; height: 28px; display: grid; place-items: center; font-size: 15px; border-radius: 50%; border: 1.5px solid var(--gold);
+    background: radial-gradient(circle at 35% 30%, #2f5aa8, #10213d); box-shadow: 0 0 8px #ffcb0544; }
+.sv-ms em { font-style: normal; font-size: 11px; color: #cfe0ff; }
+.sv-box { border-radius: 14px; padding: 12px 14px; background: var(--card); border: 1px solid var(--brd); }
+.sv-tier { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; }
+.sv-tier-b { flex: none; width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; font: 24px var(--f-poke); color: #3a2400;
+    background: radial-gradient(circle at 35% 30%, #fff0a8, #ffcb05 60%, #c79a00); box-shadow: 0 0 0 2px #ffe27a88, 0 0 16px #ffcb0577; }
+.sv-tier small { display: block; font-size: 10px; color: var(--muted); }
+.sv-tier b { font-size: 13px; }
+.sv-tier .bar { height: 5px; margin-top: 5px; border-radius: 9px; background: #ffffff18; overflow: hidden; }
+.sv-tier .bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--gold), #ff9d00); }
+.sv-data { display: grid; gap: 8px; font-size: 12px; color: var(--muted); }
+.sv-data .row { display: flex; gap: 8px; flex-wrap: wrap; }
+.sv-btn { font: 700 12.5px var(--f-body); padding: 8px 14px; border-radius: 10px; border: 1px solid var(--brd); background: #ffffff12; color: var(--ink); }
+.sv-btn:hover:not(:disabled) { border-color: var(--gold); }
+.sv-btn:disabled { opacity: .4; cursor: default; }
+.sv-btn.gold { background: linear-gradient(#ffe27a, #ffcb05); color: #2a1700; border-color: #ffe27a; font-weight: 800; }
+.sv-btn.danger { color: #fca5a5; border-color: #ef444466; }
+.sv-btn.sm { padding: 5px 10px; font-size: 11.5px; }
+
+/* ===== cột phải: tab + điều hướng ===== */
+.sv-tabs { display: flex; gap: 10px; margin-bottom: 10px; }
+.sv-tab { display: flex; align-items: center; gap: 10px; padding: 9px 18px; border-radius: 12px; border: 1px solid var(--brd); background: var(--card); font: 700 13px var(--f-display); }
+.sv-tab.on { background: linear-gradient(#ffe27a, #ffcb05); color: #2a1700; border-color: #ffe27a; box-shadow: 0 0 0 2px #ffcb0544; }
+.sv-tab i, .sv-nav i { font-style: normal; font-size: 10px; padding: 1px 7px; border-radius: 99px; background: #0007; color: var(--gold2); }
+.sv-tab.on i, .sv-nav .on i { background: #2a170030; color: #2a1700; }
+.sv-nav { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; padding: 4px; margin-bottom: 14px; border-radius: 14px; background: var(--card); border: 1px solid var(--brd); }
+.sv-nav button { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 6px; border: 0; border-radius: 10px; background: transparent; color: var(--muted); font: 700 12.5px var(--f-display); white-space: nowrap; }
+.sv-nav button:hover { color: var(--ink); background: #ffffff0d; }
+.sv-nav .on { background: linear-gradient(#ffe27a, #ffcb05); color: #2a1700; box-shadow: 0 2px 10px #ffcb0544; }
+
+/* chip binder + thanh bộ */
+.sv-chips { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+.sv-chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 13px; border-radius: 10px; border: 1px solid var(--brd); background: var(--card); font: 700 12px var(--f-display); white-space: nowrap; }
+.sv-chip i { font-style: normal; font-size: 10px; color: var(--muted); }
+.sv-chip.on { border-color: var(--gold); background: #ffcb0522; color: var(--gold2); }
+.sv-chip.new { border-style: dashed; color: var(--gold2); }
+.sv-chip.warn { color: #fca5a5; border-color: #ef444455; }
+.sv-chip.mode-on { background: var(--gold); color: #2a1700; border-color: var(--gold); }
+.sv-rail { display: flex; gap: 10px; overflow-x: auto; padding: 4px 2px 10px; margin-bottom: 6px; scroll-snap-type: x proximity; scrollbar-width: thin; scrollbar-color: #ffffff33 transparent; }
+.sv-set { flex: none; width: 72px; display: grid; justify-items: center; gap: 3px; background: transparent; border: 0; scroll-snap-align: start; color: var(--muted); }
+.sv-set .ic { width: 50px; height: 50px; border-radius: 50%; overflow: hidden; display: grid; place-items: center; font: 800 12px var(--f-display); color: var(--gold2);
+    background: radial-gradient(circle at 35% 30%, #2f5aa8, #10213d); border: 2px solid #ffffff33; }
+.sv-set .ic img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 20%; transform: scale(1.5); }
+.sv-set.on .ic { border-color: var(--gold); box-shadow: 0 0 0 2px #ffcb0555, 0 0 14px #ffcb0577; }
+.sv-set b { font: 700 10px/1.15 var(--f-display); text-align: center; max-width: 72px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; color: var(--ink); }
+.sv-set em { font-style: normal; font-size: 9.5px; }
+
+.sv-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
+.sv-sum { margin-right: auto; font-size: 12.5px; color: var(--muted); }
+.sv-sum b { color: var(--ink); }
+.sv-in, .sv-sel { background: #0008; color: var(--ink); border: 1px solid var(--brd); border-radius: 10px; padding: 6px 10px; font: inherit; font-size: 12.5px; min-width: 0; }
+.sv-in { width: 150px; }
+.sv-sel option { background: #0a1528; }
+
+.sv-ham { display: flex; align-items: center; gap: 12px; padding: 10px 14px; margin-bottom: 10px; border-radius: 14px; border: 1px solid var(--line);
+    background: linear-gradient(90deg, #ffcb0518, #ffcb050a); }
+.sv-ham .ic { font-size: 26px; filter: drop-shadow(0 2px 4px #0008); }
+.sv-ham .tx { flex: 1; min-width: 0; font-size: 12px; color: var(--muted); }
+.sv-ham .tx b { display: block; color: var(--ink); font-size: 13px; }
+.sell { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 14px; }
+.sell .lbl { font: 800 11px var(--f-display); letter-spacing: .08em; text-transform: uppercase; color: var(--gold2); margin-right: 2px; }
+
+/* ===== binder ===== */
+.sv-itabs { display: flex; justify-content: flex-end; gap: 4px; padding: 0 26px; margin-bottom: -3px; position: relative; z-index: 2; flex-wrap: wrap; }
+.sv-itab { border: 0; border-radius: 10px 10px 0 0; padding: 6px 14px 9px; font: 800 12px var(--f-display); color: #2a1700; background: linear-gradient(#ffe27a, #ffcb05);
+    box-shadow: inset 0 1px 0 #fff9; transition: transform .2s, opacity .2s; }
+.sv-itab i { font-style: normal; opacity: .7; margin-left: 3px; }
+.sv-itab.hit { background: linear-gradient(#ffb199, #ff5a36); color: #3a0a00; }
+.sv-itab.rare { background: linear-gradient(#a8dbff, #4aa8ff); color: #04213d; }
+.sv-itab.common { background: linear-gradient(#eceff5, #b3bccc); color: #1f2937; }
+.sv-itab:not(.on) { transform: translateY(5px); opacity: .8; }
+.sv-itab:not(.on):hover { opacity: 1; }
+.sv-frame { position: relative; border-radius: 22px; padding: 14px; background: linear-gradient(160deg, var(--c1), var(--c2)); box-shadow: 0 24px 50px #000b, inset 0 1px 0 #ffffff44; }
+.sv-frame::before { content: ""; position: absolute; inset: 7px; border: 2px dashed #ffffff3d; border-radius: 16px; pointer-events: none; }
+.sv-spread { position: relative; display: grid; grid-template-columns: 1fr 1fr; border-radius: 12px; overflow: hidden; perspective: 1800px; touch-action: pan-y;
+    background: #0b1630; box-shadow: 0 0 0 1px #000a, 0 8px 20px #000a; }
+.sv-pg { position: relative; padding: 16px; min-height: 420px; background: linear-gradient(160deg, #1a3466, #0e1c3a); }
+.sv-pg.l { display: grid; place-items: center; border-right: 1px solid #000a; background: linear-gradient(160deg, #17305e, #0c1936); }
+.sv-pg.r { transform-origin: left center; }
+.sv-pg.r.out-n { animation: pgOut .16s ease-in forwards; }
+.sv-pg.r.in-n { animation: pgIn .24s ease-out; }
+.sv-pg.r.out-p { animation: pgOutP .16s ease-in forwards; }
+.sv-pg.r.in-p { animation: pgInP .24s ease-out; }
+@keyframes pgOut { to { transform: rotateY(-78deg); opacity: .15; } }
+@keyframes pgIn { from { transform: rotateY(78deg); opacity: .15; } to { transform: none; opacity: 1; } }
+@keyframes pgOutP { to { transform: translateX(26px) rotateY(34deg); opacity: .1; } }
+@keyframes pgInP { from { transform: translateX(-26px) rotateY(-34deg); opacity: .1; } to { transform: none; opacity: 1; } }
+.sv-spine { position: absolute; left: calc(50% - 8px); top: 0; bottom: 0; width: 16px; z-index: 3; pointer-events: none;
+    background: linear-gradient(90deg, transparent, #0007 40%, #000a 50%, #0007 60%, transparent); }
+.sv-ring { position: absolute; left: calc(50% - 21px); width: 42px; height: 10px; border-radius: 6px; z-index: 4; pointer-events: none;
+    background: linear-gradient(#f1f3f6, #727987); box-shadow: 0 3px 5px #000b, inset 0 1px 0 #fff; }
+.sv-ring:nth-of-type(1) { top: 16%; } .sv-ring:nth-of-type(2) { top: 50%; } .sv-ring:nth-of-type(3) { top: 84%; }
+.sv-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; align-content: start; }
+.sv-empty { grid-column: 1 / -1; display: grid; place-content: center; gap: 12px; text-align: center; color: var(--muted); font-size: 13px; min-height: 360px; }
+.sv-empty a { justify-self: center; text-decoration: none; background: linear-gradient(#ffe27a, #ffcb05); color: #2a1700; font-weight: 800; padding: 9px 16px; border-radius: 10px; }
+.sv-cover { text-align: center; transform: rotate(-3deg); background: linear-gradient(160deg, #fffdf6, #efe6cf); color: #3a2a12; border-radius: 6px; padding: 22px 20px 18px; width: min(86%, 300px);
+    box-shadow: 0 12px 26px #000b, inset 0 0 0 1px #00000014; }
+.sv-cover .lg { font: 28px/1 var(--f-poke); color: #ff6a2b; -webkit-text-stroke: 1.5px #2a4a9a; paint-order: stroke fill; text-shadow: 0 3px 0 #2a4a9a55; margin-bottom: 14px; overflow-wrap: anywhere; }
+.sv-cover small { display: block; font-size: 9.5px; letter-spacing: .16em; text-transform: uppercase; color: #6b5a3a; }
+.sv-cover b { display: block; font: 24px/1.1 var(--f-poke); color: #ff8a1c; margin: 3px 0; overflow-wrap: anywhere; }
+.sv-cover span { font-size: 10.5px; color: #6b5a3a; }
+.sv-nav2 { display: flex; justify-content: center; align-items: center; gap: 16px; margin-top: 14px; }
+.sv-nb { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--brd); background: #ffffff14; font-size: 18px; display: grid; place-items: center; }
+.sv-nb:hover:not(:disabled) { background: var(--gold); color: #2a1700; }
+.sv-nb:disabled { opacity: .3; cursor: default; }
+.sv-pgno { text-align: center; font-size: 13px; }
+.sv-pgno small { display: block; font-size: 10px; color: var(--dim); }
+
+/* ===== lá bài / slab PSA ===== */
+.sv-sl { position: relative; display: block; width: 100%; aspect-ratio: 63 / 88; padding: 0; border: 0; border-radius: 5px; cursor: zoom-in; container-type: inline-size;
+    background: #ffffff0a; box-shadow: inset 0 0 0 1px #ffffff22, inset 0 1px #ffffff38; -webkit-user-drag: none; }
+.sv-sl.empty { cursor: default; border: 1px dashed #ffffff1c; box-shadow: none; background: #ffffff05; }
+.sv-sl .card { position: absolute; inset: 3px; overflow: hidden; border-radius: 4.5% / 3.3%; background: #1a2232; transition: transform .25s cubic-bezier(.2, .9, .3, 1.3);
+    box-shadow: 0 0 0 1.5px var(--aura), 0 0 10px color-mix(in srgb, var(--aura) 45%, transparent); }
+.sv-sl .card img, .pic img { width: 100%; height: 100%; object-fit: cover; display: block; -webkit-user-drag: none; pointer-events: none; }
+.ph { display: grid; place-items: center; width: 100%; height: 100%; padding: 6px; font-size: 10px; text-align: center; color: #7d8aa5; background: linear-gradient(160deg, #16213a, #0c1426); }
+.sv-sl:hover .card, .sv-sl:hover .sv-slab { transform: translateY(-3px); }
+.sv-sl .gloss { position: absolute; inset: 0; z-index: 3; pointer-events: none; border-radius: inherit;
+    background: linear-gradient(125deg, #ffffff38 0%, #ffffff0d 20%, transparent 38%, transparent 70%, #ffffff14 85%, transparent); }
+.sv-sl .price { position: absolute; z-index: 4; left: 5px; bottom: 5px; padding: 0 5px; border-radius: 99px; background: #03060dd1; color: var(--gold2); font: 800 8.5px/14px var(--f-body); }
+.sv-sl .err { position: absolute; z-index: 4; left: 5px; top: 5px; padding: 0 5px; border-radius: 3px; background: #ef4444; color: #fff; font: 800 8px/13px var(--f-body); }
+.sv-sl.t5 .card, .sv-sl.t6 .card { overflow: hidden; }
+.sv-sl.t5 .card::after, .sv-sl.t6 .card::after, .sv-sl.g10 .sv-slab::after, .sv-sl.g9 .sv-slab::after { content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 260%; z-index: 2; pointer-events: none;
+    background: linear-gradient(115deg, transparent 35%, #ffffff66 48%, transparent 62%); mix-blend-mode: overlay; animation: sheen 3.8s ease-in-out infinite var(--d, 0s); }
+@keyframes sheen { 0% { transform: translateX(-70%); } 60%, 100% { transform: translateX(10%); } }
+.sv-sl.sel { outline: 3px solid var(--gold); outline-offset: 1px; }
+.sv-sl.sel::before { content: "✓"; position: absolute; z-index: 6; right: 4px; top: 4px; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; background: var(--gold); color: #2a1700; font-weight: 900; font-size: 13px; }
+.mode-quick .sv-sl:not(.empty) { cursor: copy; }
+.mode-multi .sv-sl:not(.empty) { cursor: pointer; }
+
+.sv-slab { position: absolute; inset: 1px; z-index: 1; display: flex; flex-direction: column; gap: 3cqw; padding: 4cqw 5cqw 5cqw; border-radius: 5px; overflow: hidden;
+    background: linear-gradient(160deg, #f6f9fc, #c8d1dc 55%, #eef2f7); transition: transform .25s cubic-bezier(.2, .9, .3, 1.3);
+    box-shadow: 0 2px 6px #0008, inset 0 0 0 1px #ffffffbf, inset 0 -2px #0000001f; }
+.sv-sl.g10 .sv-slab { box-shadow: 0 0 0 1.5px var(--gold), 0 0 14px #ffcb058c, inset 0 0 0 1px #ffffffbf; }
+.sv-sl.g9 .sv-slab { box-shadow: 0 0 0 1.5px #dce6f2d9, 0 0 12px #c8dcff59, 0 2px 6px #0008; }
+.sv-lab { --lc: #c8102e; width: 100%; min-width: 0; text-align: left; border: 3px solid var(--lc); background: var(--lc); border-radius: 3px; container-type: inline-size; box-shadow: 0 1px 2px #0006; }
+.sv-sl.tag .sv-lab { --lc: #0d9488; }
+.sv-lab-in { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 3cqw; padding: 2.4cqw 3cqw 2cqw; text-transform: uppercase; letter-spacing: .01em; color: #141414;
+    background: linear-gradient(#fff, #f6f6f3); font: 700 3.9cqw/1.16 "Roboto Condensed", "Arial Narrow", Arial, sans-serif; }
+.sv-lab .l, .sv-lab .r { display: flex; flex-direction: column; min-width: 0; }
+.sv-lab .r { align-items: flex-end; text-align: right; }
+.sv-lab .t { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.sv-lab .nm { font-weight: 800; } .sv-lab .vr { font-weight: 600; }
+.sv-lab .g { margin-top: auto; font: 800 10.5cqw/.92 "Roboto Condensed", Arial, sans-serif; letter-spacing: -.02em; }
+.sv-lab .bc { display: flex; align-items: center; gap: 2cqw; margin-top: 1.4cqw; }
+.sv-lab .bc svg { flex: none; width: 30cqw; height: 4.6cqw; }
+.sv-lab .bc small { font-size: 3.4cqw; letter-spacing: .08em; }
+.sv-slab .pic { position: relative; flex: 1 1 0; min-height: 0; }
+.sv-slab .pic > span { position: absolute; top: 0; left: 50%; height: 100%; aspect-ratio: .716 / 1; max-width: 100%; transform: translateX(-50%); overflow: hidden; border-radius: 3px; background: #1a2232; box-shadow: 0 1px 3px #0007; }
+.sv-slab .pic .gloss { z-index: 2; }
+
+/* ===== cửa sổ (chi tiết / hộp thoại / thanh chọn nhiều / toast) ===== */
+.ov { position: fixed; inset: 0; z-index: 60; display: none; place-items: center; padding: 16px; background: #000d; overflow-y: auto; }
+.ov.on { display: grid; }
+.ov-box { display: flex; gap: 20px; width: 100%; max-width: 700px; padding: 18px; border-radius: 18px; align-items: center; background: #0c172b; border: 1px solid var(--line); box-shadow: 0 30px 60px #000c; }
+.ov-img { flex: none; width: min(44%, 270px); }
+.ov-img .sv-sl { cursor: default; }
+.ov-img .sv-sl:hover .card, .ov-img .sv-sl:hover .sv-slab { transform: none; }
+.ov-info { min-width: 0; flex: 1; display: grid; gap: 7px; font-size: 13px; }
+.ov-info h3 { font: 700 20px/1.15 var(--f-display); }
+.ov-info .row { color: var(--muted); } .ov-info .row b { color: var(--ink); }
+.ov-info .val { font: 800 24px var(--f-display); color: var(--gold2); }
+.ov-info .val small { font: 600 11px var(--f-body); color: var(--muted); margin-left: 6px; }
+.ov-act { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.gp { border: 1px solid var(--brd); border-radius: 12px; padding: 10px; background: #00000030; display: grid; gap: 8px; }
+.gp .dist { display: flex; height: 8px; border-radius: 9px; overflow: hidden; background: #ffffff14; }
+.gp .dist i { display: block; min-width: 2px; }
+.gp .lbl { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted); gap: 2px; }
+.gp .lbl b { color: var(--ink); }
+.gp .btns { display: flex; gap: 8px; }
+.gp .btns .sv-btn { flex: 1; padding: 8px 6px; line-height: 1.25; }
+.gp .btns small { display: block; font-weight: 600; font-size: 10px; opacity: .85; }
+.gres { text-align: center; display: grid; gap: 4px; padding: 10px 0; }
+.gres .big { font: 800 40px/1 var(--f-display); }
+.spin { width: 34px; height: 34px; margin: 6px auto; border-radius: 50%; border: 4px solid #ffffff22; border-top-color: var(--gold); animation: rot .8s linear infinite; }
+@keyframes rot { to { transform: rotate(360deg); } }
+@media (max-width: 560px) { .ov-box { flex-direction: column; } .ov-img { width: 56%; } }
+
+.dlg-box { width: 100%; max-width: 430px; padding: 18px; border-radius: 16px; background: #0c172b; border: 1px solid var(--line); box-shadow: 0 30px 60px #000c; display: grid; gap: 12px; }
+.dlg-box h3 { font: 700 18px var(--f-display); }
+.dlg-box .body { font-size: 13px; color: var(--muted); display: grid; gap: 6px; }
+.dlg-box .body b { color: var(--ink); }
+.dlg-box .btns { display: flex; gap: 8px; justify-content: flex-end; }
+.bulk { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%) translateY(140%); z-index: 40; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px;
+    max-width: calc(100vw - 24px); padding: 10px 14px; border-radius: 16px; background: #0c172bf5; border: 1.5px solid var(--gold); box-shadow: 0 14px 40px #000c; transition: transform .25s; }
+.bulk.on { transform: translateX(-50%); }
+.bulk .info { font-size: 12.5px; margin-right: 6px; } .bulk .info b { color: var(--gold2); }
+.toast { position: fixed; left: 50%; bottom: 22px; z-index: 80; transform: translate(-50%, 160%); display: flex; gap: 12px; align-items: center; padding: 10px 14px; border-radius: 12px;
+    background: #101c33; border: 1px solid var(--line); box-shadow: 0 12px 30px #000c; font-size: 13px; max-width: calc(100vw - 24px); transition: transform .3s; }
+.toast.on { transform: translate(-50%, 0); }
+.toast button { border: 0; background: transparent; color: var(--gold2); font-weight: 800; }
+
+/* ===== tab phụ: thành tích / lịch sử / trang trí ===== */
+.sv-panel { border-radius: 16px; padding: 16px; background: var(--card); border: 1px solid var(--brd); display: grid; gap: 14px; }
+.sv-panel h3 { font: 700 16px var(--f-display); }
+.sv-panel p { font-size: 12.5px; color: var(--muted); }
+.ach-row { display: flex; flex-wrap: wrap; gap: 10px; }
+.ach-b { display: grid; justify-items: center; gap: 3px; width: 86px; font-size: 10.5px; text-align: center; color: var(--muted); }
+.ach-b span { width: 46px; height: 46px; display: grid; place-items: center; font-size: 24px; border-radius: 50%; border: 2px solid var(--gold); background: radial-gradient(circle at 35% 30%, #2f5aa8, #10213d); box-shadow: 0 0 12px #ffcb0533; }
+.hist { display: grid; gap: 8px; }
+.hist-i { display: grid; grid-template-columns: 54px 1fr auto; gap: 12px; align-items: center; padding: 8px 10px; border-radius: 12px; background: #ffffff08; border: 1px solid var(--brd); }
+.hist-i .th { width: 54px; aspect-ratio: 63 / 88; border-radius: 4px; overflow: hidden; background: #1a2232; box-shadow: 0 0 0 1.5px var(--aura, #94a3b8); }
+.hist-i .th img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.hist-i b { font-size: 13px; display: block; } .hist-i small { color: var(--muted); font-size: 11px; }
+.hist-i .v { font: 800 15px var(--f-display); color: var(--gold2); text-align: right; }
+.skins { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+.skin { border: 2px solid transparent; border-radius: 12px; padding: 0; overflow: hidden; background: transparent; text-align: center; }
+.skin i { display: block; height: 58px; }
+.skin span { display: block; padding: 5px; font-size: 11px; background: #0006; }
+.skin.on { border-color: var(--gold); box-shadow: 0 0 14px #ffcb0566; }
+.skin-c { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-size: 12px; color: var(--muted); }
+.skin-c input { width: 44px; height: 32px; border: 1px solid var(--brd); border-radius: 8px; background: transparent; padding: 0; }
+
+@media (max-width: 960px) { .sv-wrap { grid-template-columns: 1fr; } .sv-brand { font-size: 18px; } }
+@media (max-width: 700px) {
+    .sv-spread { grid-template-columns: 1fr; } .sv-pg.l, .sv-spine, .sv-ring { display: none; } .sv-pg { min-height: 0; padding: 12px; }
+    .sv-grid { gap: 7px; } .sv-nav button { font-size: 11px; gap: 3px; padding: 9px 2px; } .sv-in { width: 110px; }
+}
+@media (prefers-reduced-motion: reduce) { * { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+</style>
+<link rel="stylesheet" href="binder-polish.css">
+</head>
+<body>
+
+<header class="sv-top">
+    <a class="sv-back" href="pack.html">← Về trang xé pack</a>
+    <div class="sv-brand">  Xé Pack</div>
+    <span class="sv-wallet" id="wallet" title="Tiền mặt: bán lá bài để có tiền, trả phí chấm điểm từ đây">Ví $0</span>
+</header>
+
+<main class="sv-wrap">
+    <aside class="sv-side">
+        <h1 class="sv-title">Sổ  </h1>
+        <section class="sv-tc">
+            <span class="sv-kicker">Trainer card · Sổ  </span>
+            <div class="sv-me">
+                <span class="sv-av" id="avatar">?</span>
+                <div>
+                    <span class="sv-name" id="ownerName" title="Bấm để đổi tên">Người chơi</span>
+                    <div class="sv-join" id="joined"></div>
+                    <span class="sv-rank" id="rankTitle"></span>
+                </div>
+            </div>
+            <div class="sv-pts" id="pts">
+                <span><small>Điểm xếp hạng · lãi/lỗ</small><b id="ptsVal">$0</b></span>
+                <span class="sv-money"><span id="spent">Đã chi $0</span><span id="pulled">Xé ra $0</span></span>
+            </div>
+            <div class="sv-badges">
+                <div class="sv-badge"><b id="bPacks">0</b><span>pack đã xé</span></div>
+                <div class="sv-badge"><b id="bCards">0</b><span>lá trong sổ</span></div>
+                <div class="sv-badge"><b id="bSlabs">0</b><span>slab đã chấm</span></div>
+                <div class="sv-badge"><b id="bValue">$0</b><span>giá trị sổ</span></div>
+            </div>
+            <div class="sv-ms" id="ms"></div>
+        </section>
+        <section class="sv-box">
+            <div class="sv-tier">
+                <span class="sv-tier-b" id="tierNo">1</span>
+                <div style="flex:1;min-width:0">
+                    <small>Cấp bậc · theo số pack đã xé</small>
+                    <b id="tierName">Tân binh</b>
+                    <div class="bar"><i id="tierBar" style="width:0"></i></div>
+                    <small id="tierNext" style="margin-top:4px"></small>
+                </div>
+            </div>
+        </section>
+        <section class="sv-box sv-data">
+            <div>Dữ liệu sổ lưu ngay trên trình duyệt này. Nên xuất file để sao lưu hoặc chuyển máy.</div>
+            <div class="row"><button class="sv-btn sm" id="exportBtn">⬇ Xuất file</button><button class="sv-btn sm" id="importBtn">⬆ Nhập file</button></div>
+            <input type="file" id="importFile" accept="application/json,.json" hidden>
+        </section>
+    </aside>
+
+    <section class="sv-main">
+        <div class="sv-tabs"><button class="sv-tab on">Bộ sưu tập <i id="cntAll">0</i></button></div>
+        <nav class="sv-nav" id="nav">
+            <button data-v="binder" class="on"> Binder <i id="cntBinder">0</i></button>
+            <button data-v="ach"> Thành tích <i id="cntAch">0</i></button>
+            <button data-v="hist"> Lịch sử <i id="cntHist">0</i></button>
+            <button data-v="skin"> Trang trí</button>
+        </nav>
+
+        <!-- ===== BINDER ===== -->
+        <div id="vBinder">
+            <div class="sv-chips" id="chips"></div>
+            <div class="sv-rail" id="rail"></div>
+            <div class="sv-bar">
+                <span class="sv-sum" id="sum"></span>
+                <input class="sv-in" id="q" type="search" placeholder="Tìm tên lá…" aria-label="Tìm lá">
+                <select class="sv-sel" id="sortSel" aria-label="Sắp xếp">
+                    <option value="rarity">Độ hiếm ↓</option><option value="price">Giá ↓</option><option value="slab">Slab trước</option>
+                    <option value="new">Mới nhất</option><option value="name">Tên A→Z</option>
+                </select>
+                <select class="sv-sel" id="kindSel" aria-label="Lọc">
+                    <option value="all">Tất cả lá</option><option value="slab">Chỉ slab</option><option value="raw">Chưa chấm</option>
+                    <option value="err">Lá lỗi</option><option value="dup">Lá trùng</option>
+                </select>
+            </div>
+            <div class="sv-ham" id="ham"></div>
+            <div class="sell" id="sell"></div>
+
+            <div class="sv-itabs" id="itabs"></div>
+            <div class="sv-frame" id="frame">
+                <div class="sv-spread" id="spread">
+                    <div class="sv-pg l" id="pgL"></div>
+                    <div class="sv-pg r" id="pgR"><div class="sv-grid" id="grid"></div></div>
+                    <div class="sv-spine"></div><div class="sv-ring"></div><div class="sv-ring"></div><div class="sv-ring"></div>
+                </div>
+            </div>
+            <div class="sv-nav2">
+                <button class="sv-nb" id="prev" aria-label="Trang trước">‹</button>
+                <div class="sv-pgno"><b id="pgNow">Trang 1</b> <span style="color:var(--muted)" id="pgAll">/ 1</span><small>Vuốt ngang để lật trang</small></div>
+                <button class="sv-nb" id="next" aria-label="Trang sau">›</button>
+            </div>
+        </div>
+
+        <!-- ===== THÀNH TÍCH ===== -->
+        <div id="vAch" class="sv-panel" hidden>
+            <h3>🏆 Thành tích</h3>
+            <p id="achTxt"></p>
+            <div class="ach-row" id="achRow"></div>
+            <div><button class="sv-btn gold" id="achOpen">Mở bảng thành tích đầy đủ</button></div>
+        </div>
+
+        <!-- ===== LỊCH SỬ ===== -->
+        <div id="vHist" class="sv-panel" hidden>
+            <h3>🕘 Lịch sử xé pack</h3>
+            <p>Các lá bài được gom theo từng lần xé (cách nhau vài giây). Chỉ gồm những lá còn trong sổ.</p>
+            <div class="hist" id="histList"></div>
+            <div><button class="sv-btn" id="histMore" hidden>Xem thêm</button></div>
+        </div>
+
+        <!-- ===== TRANG TRÍ ===== -->
+        <div id="vSkin" class="sv-panel" hidden>
+            <h3>🎨 Trang trí binder</h3>
+            <p>Chọn màu bìa cho binder. Lưu tự động.</p>
+            <div class="skins" id="skins"></div>
+            <div class="skin-c">Tự chọn: <input type="color" id="skC1" aria-label="Màu 1"> <input type="color" id="skC2" aria-label="Màu 2">
+                <button class="sv-btn sm" id="skReset">Đặt lại</button></div>
+        </div>
+    </section>
+</main>
+
+<div class="bulk" id="bulk">
+    <span class="info" id="bulkInfo"></span>
+    <button class="sv-btn sm" id="bulkAll">Chọn cả trang</button>
+    <select class="sv-sel" id="bulkMove" aria-label="Chuyển sang binder"></select>
+    <button class="sv-btn gold sm" id="bulkSell">Bán</button>
+    <button class="sv-btn sm" id="bulkDone">Xong</button>
+</div>
+<div class="ov" id="ov"><div class="ov-box" id="ovBox"></div></div>
+<div class="ov" id="dlg"><div class="dlg-box"><h3 id="dlgT"></h3><div class="body" id="dlgB"></div><div class="btns"><button class="sv-btn" id="dlgNo">Huỷ</button><button class="sv-btn gold" id="dlgOk">Đồng ý</button></div></div></div>
+<div class="toast" id="toast"><span id="toastTx"></span><button id="toastUndo" hidden>Hoàn tác</button></div>
+
+<script>
+(function () {
+'use strict';
+const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch]);
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const ls = {
+    get(k, d) { try { const v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } }
+};
+
+// =========================================================
+// CẤU HÌNH (chỉnh ở đây)
+// =========================================================
+const CFG = {
+    perPage: 9,
+    sellRate: .9,            // bán lá được bao nhiêu % giá thị trường
+    startCash: 100,          // tiền mặt ban đầu ($)
+    packPrice: 26.30,        // giá 1 pack để tính lãi/lỗ (khớp trang xé pack)
+    cheap: 1,                // "Bán lá rẻ": lá chưa chấm có giá dưới mức này ($)
+    maxBinders: 10,
+    hammerMax: 10, hammerClaim: 7,
+    gapMs: 8000              // các lá cách nhau ≤ 8 giây = cùng 1 lần xé (tab Lịch sử)
+};
+const GRADING = {            // giống pack.js: điểm trung bình = base + span × chất lượng tâm
+    fee: { PSA: 20, TAG: 15 }, mult: { 10: 3, 9: 1.4, 8: 1, 7: .85, 6: .7, 5: .55 }, tagMult: .8, base: 5.45, span: 2.4, sd: .98, minUsd: 3
+};
+const ERR_MULT = { 'Lệch cắt': 2, 'Mất mực': 2.5, 'Lỗi in': 3, 'In ngược mặt': 5 };
+const TIERS = ['common', 'uncommon', 'rare', 'holo', 'epic', 'legendary', 'showcase'];
+const TIER_COLOR = { common: '#94a3b8', uncommon: '#4ade80', rare: '#38bdf8', holo: '#a78bfa', epic: '#f472b6', legendary: '#fbbf24', showcase: '#fb923c' };
+const GRADE_NAME = { 10: 'GEM MT', 9: 'MINT', 8: 'NM-MT', 7: 'NM', 6: 'EX-MT', 5: 'EX' };
+const TAB_NAME = { all: 'Tất cả', hit: 'Hit', rare: 'Rare · ex', common: 'Thường' };
+const RANKS = [                                   // cấp bậc theo số pack đã xé
+    { n: 0, name: 'Tân binh' }, { n: 10, name: 'Sưu tầm viên' }, { n: 50, name: 'Thợ săn hit' }, { n: 200, name: 'Đại gia pack' }, { n: 1000, name: 'Nhà vô địch' }
+];
+const SKINS = [
+    // 💎 Gemstone Collection
+    ['Diamond – Kim Cương', '#b9f2ff', '#102b40'],
+    ['Ruby – Hồng Ngọc', '#e0115f', '#280615'],
+    ['Sapphire – Lam Ngọc', '#0f52ba', '#07152e'],
+    ['Emerald – Lục Bảo', '#50c878', '#082719'],
+    ['Amethyst – Thạch Anh Tím', '#9966cc', '#1b1030'],
+    ['Black Opal – Hắc Ngọc', '#65758b', '#080d18'],
+    ['Pink Diamond – Kim Cương Hồng', '#ff9ecf', '#301326'],
+    ['Golden Amber – Hổ Phách', '#ffbf00', '#291604'],
+
+    // 👑 Royal Collection
+    ['Royal Gold – Hoàng Kim', '#d4af37', '#211704'],
+    ['White Gold – Bạch Kim', '#e5e4e2', '#1b2029'],
+    ['Rose Gold – Vàng Hồng', '#e8a0a0', '#2c141b'],
+    ['Platinum – Bạch Kim Platinum', '#aeb9c8', '#151c29'],
+    ['Black Gold – Hắc Kim', '#c5a45e', '#090909'],
+    ['Imperial Purple – Tử Kim', '#9d4edd', '#190b2e'],
+
+    // 🌌 Mythical Collection
+    ['Celestial – Thiên Hà', '#818cf8', '#090b29'],
+    ['Nebula – Tinh Vân', '#c084fc', '#170b32'],
+    ['Aurora – Cực Quang', '#5eead4', '#071e2b'],
+    ['Starlight – Ánh Sao', '#f8fafc', '#17243b'],
+    ['Cosmic Void – Hư Không', '#6366f1', '#050510'],
+    ['Eternal Flame – Hỏa Vĩnh Cửu', '#fb7185', '#240711'],
+
+    // 🖤 Ultra Rare Collection
+    ['Obsidian – Hắc Diệu Thạch', '#64748b', '#050608'],
+    ['Blood Moon – Nguyệt Thực', '#dc2626', '#120307'],
+    ['Phantom – Bóng Ma', '#a78bfa', '#10091e'],
+    ['Void Crystal – Tinh Thể Hư Không', '#22d3ee', '#04151d'],
+    ['Prismatic – Lăng Kính', '#e879f9', '#160d29'],
+    ['Ancient Relic – Cổ Vật', '#c2a878', '#21190d']
+];
+// =========================================================
+// KHO DỮ LIỆU (cùng khoá pack_binder_v1 với trang xé pack)
+// =========================================================
+const KEY = 'pack_binder_v1', W_KEY = 'pack_wallet_v1', BK_KEY = 'pack_binders_v1', SKIN_KEY = 'pack_binder_skin_v1', HAM_KEY = 'pack_hammer_v1', JOIN_KEY = 'pack_joined_v1';
+// Mọi thao tác đi qua BinderStore (binder-store.js): đọc từ đệm, ghi thì tự đồng bộ lên Supabase khi đã đăng nhập.
+const Store = {
+    reload() { BinderStore.reload(); },
+    all() { return BinderStore.all(); },
+    get(id) { return BinderStore.get(id); },
+    update(id, patch) { return BinderStore.update(id, patch); },          // giá trị undefined = xoá trường
+    remove(ids) { return BinderStore.remove(ids); },
+    restore(list) { list.forEach(c => BinderStore.add(c)); return true; },  // hoàn tác bán
+    name() { return BinderStore.name(); },
+    setName(n) { return BinderStore.setName(n); }
+};
+const wallet = { get bal() { return Wallet.bal(); }, add(v) { return Wallet.add(v); } };   // ví nằm trong shared/wallet.js (theo từng tài khoản)
+const binders = () => [{ id: 'main', name: 'Binder chính' }, ...ls.get(BK_KEY, [])];
+const bidOf = c => c.b || 'main';
+
+// =========================================================
+// TIỆN ÍCH THẺ
+// =========================================================
+const rankOf = c => Math.max(0, TIERS.indexOf(c.k));
+const valueOf = c => c.u == null ? null : c.u * (c.m || 1);
+const sellOf = c => Math.round((valueOf(c) ?? 0) * CFG.sellRate * 100) / 100;
+const fmt = v => v == null ? '—' : (v < 0 ? '−' : '') + '$' + (Math.abs(v) >= 10000 ? Math.round(v).toLocaleString('en-US') : Math.abs(v).toFixed(2));
+const fmtS = v => (v < 0 ? '−' : '+') + fmt(v);
+const fmtK = v => v >= 1e6 ? '$' + (v / 1e6).toFixed(1) + 'M' : v >= 1e4 ? '$' + (v / 1e3).toFixed(1) + 'k' : fmt(v);
+const groupOf = c => { const r = rankOf(c); return r >= 4 ? 'hit' : r >= 2 ? 'rare' : 'common'; };
+const setKey = c => c.g + '|' + (c.s || c.sn);
+const hash = s => { let h = 2166136261; for (const ch of String(s)) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; };
+const certOf = c => String(10000000 + hash(c.id) % 89999999);
+const canGrade = c => !c.gr && (rankOf(c) >= 2 || (valueOf(c) ?? 0) >= GRADING.minUsd || !!c.e);
+
+function imgOf(c) {
+    const ph = () => Object.assign(document.createElement('div'), { className: 'ph', textContent: c.n });
+    const src = c.i || c.a;
+    if (!src) return ph();
+    const im = new Image();
+    im.alt = c.n; im.loading = 'lazy'; im.draggable = false; im.src = src;
+    im.onerror = () => {
+        const t = +(im.dataset.t || 0);
+        if (t === 0 && /\/(high|low|small)\.(png|webp|jpg)$/.test(im.src)) { im.dataset.t = 1; im.src = im.src.replace(/\/(high|low|small)\.(png|webp|jpg)$/, '/large.png'); return; }
+        if (t === 1 && /\/large\.png$/.test(im.src)) { im.dataset.t = 2; im.src = im.src.replace(/\/large\.png$/, '/small.png'); return; }
+        if (c.a && im.src !== c.a && t < 3) { im.dataset.t = 3; im.src = c.a; return; }
+        im.replaceWith(ph());
+    };
+    return im;
+}
+function barcode(seed) {                          // mã vạch giả, cố định theo số cert
+    let h = hash(seed), x = 0, out = '';
+    while (x < 46) { h = Math.imul(h ^ (h >>> 15), 2246822519) >>> 0; const w = 1 + (h % 3), gap = 1 + ((h >>> 3) % 2); out += `<rect x="${x}" y="0" width="${w}" height="8" fill="#111"/>`; x += w + gap; }
+    return `<svg viewBox="0 0 48 8" preserveAspectRatio="none" aria-hidden="true">${out}</svg>`;
+}
+function labelHTML(c) {
+    const set = `${c.gn || c.g || ''} ${c.sn || c.s || ''}`.trim().toUpperCase();
+    const cert = certOf(c), tag = c.co === 'TAG';
+    return `<span class="sv-lab"><span class="sv-lab-in"><span class="l"><span class="t">${esc(set)}</span><span class="t nm">${esc(c.n)}</span><span class="t vr">${esc(c.r || '')}</span>`
+        + `<span class="bc">${barcode(cert)}<small>${cert}</small></span></span>`
+        + `<span class="r"><span class="t">${c.no ? '#' + esc(c.no) : ''}</span><span class="t">${tag ? 'TAG ' : ''}${GRADE_NAME[Math.floor(c.gr)] || 'EX'}</span><b class="g">${c.gr}</b></span></span></span>`;
+}
+// 1 lá trong binder: slab nếu đã chấm, không thì lá thường viền theo độ hiếm
+function cardEl(c, opt = {}) {
+    const b = document.createElement(opt.static ? 'div' : 'button');
+    if (!opt.static) b.type = 'button';
+    b.className = 'sv-sl' + (c.gr ? ` is-slab g${Math.floor(c.gr)}${c.co === 'TAG' ? ' tag' : ''}` : ` t${rankOf(c)}`);
+    b.dataset.id = c.id;
+    b.style.setProperty('--aura', TIER_COLOR[c.k] || '#94a3b8');
+    b.style.setProperty('--d', (-(hash(c.id) % 40) / 10).toFixed(1) + 's');
+    b.setAttribute('aria-label', `${c.n}${c.gr ? ' ' + (c.co || 'PSA') + ' ' + c.gr : ''}`);
+    if (c.gr) {
+        b.innerHTML = `<span class="sv-slab">${labelHTML(c)}<span class="pic"><span></span></span><span class="gloss"></span></span>`;
+        b.querySelector('.pic > span').append(imgOf(c));
+    } else {
+        b.innerHTML = `<span class="card"></span><span class="gloss"></span>`;
+        b.querySelector('.card').append(imgOf(c));
+        if (c.e) b.insertAdjacentHTML('beforeend', `<span class="err">⚠ ${esc(c.e)}</span>`);
+        if (opt.price) b.insertAdjacentHTML('beforeend', `<span class="price">${fmt(valueOf(c))}</span>`);
+    }
+    if (c.gr && opt.price) b.insertAdjacentHTML('beforeend', `<span class="price" style="z-index:5">${fmt(valueOf(c))}</span>`);
+    return b;
+}
+
+// =========================================================
+// CHẤM ĐIỂM (cùng công thức với pack.js)
+// =========================================================
+const gauss = () => { let u = 0, v = 0; while (!u) u = Math.random(); while (!v) v = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+function erf(x) { const s = x < 0 ? -1 : 1; x = Math.abs(x); const t = 1 / (1 + .3275911 * x); return s * (1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - .284496736) * t + .254829592) * t * Math.exp(-x * x)); }
+const Phi = z => .5 * (1 + erf(z / Math.SQRT2));
+const newCtr = () => [50 + Math.min(20, Math.round(Math.abs(gauss()) * 4)), 50 + Math.min(25, Math.round(Math.abs(gauss()) * 6))];
+const ctrQual = ct => { const [f, b] = ct || [52, 53]; return clamp(1 - ((f - 50) / 20 * .6 + (b - 50) / 25 * .4), 0, 1); };
+const gradeMu = ct => GRADING.base + GRADING.span * ctrQual(ct);
+function gradeDist(ct, co) {
+    const step = co === 'TAG' ? .5 : 1, h = step / 2, mu = gradeMu(ct), sd = GRADING.sd, out = [];
+    for (let g = 10; g >= 5; g -= step) { const hi = g >= 10 ? 1 : Phi((g + h - mu) / sd), lo = g <= 5 ? 0 : Phi((g - h - mu) / sd); out.push([g, hi - lo]); }
+    return out;
+}
+function gradeMult(g, co) { const m = GRADING.mult, lo = Math.floor(g), hi = Math.ceil(g); const v = lo === hi ? m[lo] : m[lo] + (m[hi] - m[lo]) * (g - lo); return v * (co === 'TAG' ? GRADING.tagMult : 1); }
+function rollGrade(ct, co) { const step = co === 'TAG' ? .5 : 1, x = gradeMu(ct) + GRADING.sd * gauss(); return Math.min(10, Math.max(5, Math.round(x / step) * step)); }
+const gradeColor = g => { const f = Math.floor(g); return f >= 10 ? '#fde047' : f === 9 ? '#86efac' : f === 8 ? '#7dd3fc' : f === 7 ? '#a5b4fc' : f === 6 ? '#d1d5db' : '#9ca3af'; };
+
+// =========================================================
+// TRẠNG THÁI + LỌC
+// =========================================================
+const S = { view: 'binder', tab: 'all', sort: 'rarity', kind: 'all', set: '', q: '', page: 0, bk: 'main', mode: '' };   // mode: '' | 'quick' | 'multi'
+const SEL = new Set();
+let shown = [], histShown = 30;
+
+function dupIds(list) {                           // lá trùng = cùng bộ + cùng số; giữ 1 lá tốt nhất (slab cao điểm, rồi giá cao)
+    const by = new Map();
+    list.forEach(c => { const k = setKey(c) + '|' + (c.no || c.n); (by.get(k) || by.set(k, []).get(k)).push(c); });
+    const out = new Set();
+    by.forEach(arr => { if (arr.length > 1) { arr.sort((a, b) => (b.gr || 0) - (a.gr || 0) || (valueOf(b) ?? -1) - (valueOf(a) ?? -1)); arr.slice(1).forEach(c => out.add(c.id)); } });
+    return out;
+}
+const inBk = () => Store.all().filter(c => bidOf(c) === S.bk);
+function baseList() {
+    const q = S.q.trim().toLowerCase(), pool = inBk(), dups = S.kind === 'dup' ? dupIds(pool) : null;
+    return pool.filter(c => (!S.set || setKey(c) === S.set) && (!q || String(c.n).toLowerCase().includes(q))
+        && (S.kind === 'all' || (S.kind === 'slab' && c.gr) || (S.kind === 'raw' && !c.gr) || (S.kind === 'err' && c.e) || (S.kind === 'dup' && dups.has(c.id))));
+}
+const sorters = {
+    rarity: (a, b) => rankOf(b) - rankOf(a) || (valueOf(b) ?? -1) - (valueOf(a) ?? -1),
+    slab: (a, b) => (b.gr || 0) - (a.gr || 0) || (valueOf(b) ?? -1) - (valueOf(a) ?? -1),
+    price: (a, b) => (valueOf(b) ?? -1) - (valueOf(a) ?? -1),
+    new: (a, b) => b.t - a.t,
+    name: (a, b) => String(a.n).localeCompare(String(b.n), 'vi')
+};
+
+// =========================================================
+// THÔNG BÁO / HỘP THOẠI
+// =========================================================
+let toastT = 0, undoFn = null;
+function toast(msg, undo) {
+    $('#toastTx').textContent = msg; undoFn = undo || null; $('#toastUndo').hidden = !undo;
+    $('#toast').classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => $('#toast').classList.remove('on'), undo ? 7000 : 2800);
+}
+$('#toastUndo').onclick = () => { if (undoFn) undoFn(); undoFn = null; $('#toast').classList.remove('on'); };
+function ask({ title, html, ok = 'Đồng ý', danger = false, cancel = 'Huỷ' }) {
+    return new Promise(res => {
+        const d = $('#dlg'), okb = $('#dlgOk'), no = $('#dlgNo');
+        $('#dlgT').textContent = title; $('#dlgB').innerHTML = html;
+        okb.textContent = ok; okb.className = 'sv-btn ' + (danger ? 'danger' : 'gold'); no.textContent = cancel; no.hidden = cancel === null;
+        d.classList.add('on');
+        const done = v => { d.classList.remove('on'); okb.onclick = no.onclick = d.onclick = null; document.removeEventListener('keydown', key); res(v); };
+        const key = e => { if (e.key === 'Escape') done(false); };
+        okb.onclick = () => done(true); no.onclick = () => done(false); d.onclick = e => { if (e.target === d) done(false); };
+        document.addEventListener('keydown', key);
+        okb.focus();
+    });
+}
+
+// =========================================================
+// VẼ: CỘT TRÁI
+// =========================================================
+function renderSide() {
+    const all = Store.all(), total = all.reduce((s, c) => s + (valueOf(c) || 0), 0), slabs = all.filter(c => c.gr).length;
+    const st = ls.get('pack_stats_v1', { packs: 0, value: 0 }), packs = st.packs || 0, spent = st.cost != null ? st.cost : packs * CFG.packPrice, profit = (st.value || 0) - spent;
+    const name = Store.name() || 'Người chơi';
+    $('#ownerName').textContent = name; $('#avatar').textContent = name.trim().charAt(0) || '?';
+    let joined = ls.get(JOIN_KEY, null); if (!joined) { joined = all.length ? Math.min(...all.map(c => c.t || Date.now())) : Date.now(); ls.set(JOIN_KEY, joined); }
+    $('#joined').textContent = 'Gia nhập ' + new Date(joined).toLocaleDateString('vi-VN');
+    let ri = 0; RANKS.forEach((r, i) => { if (packs >= r.n) ri = i; });
+    $('#rankTitle').textContent = RANKS[ri].name; $('#tierName').textContent = RANKS[ri].name; $('#tierNo').textContent = ri + 1;
+    const nx = RANKS[ri + 1];
+    $('#tierBar').style.width = (nx ? clamp((packs - RANKS[ri].n) / (nx.n - RANKS[ri].n), 0, 1) * 100 : 100) + '%';
+    $('#tierNext').textContent = nx ? `Còn ${nx.n - packs} pack nữa lên "${nx.name}"` : 'Đã đạt cấp cao nhất';
+    $('#ptsVal').textContent = fmtS(profit); $('#pts').classList.toggle('neg', profit < 0);
+    $('#spent').textContent = 'Đã chi ' + fmtK(spent); $('#pulled').textContent = 'Xé ra ' + fmtK(st.value || 0);
+    $('#bPacks').textContent = packs.toLocaleString('en-US'); $('#bCards').textContent = all.length.toLocaleString('en-US');
+    $('#bSlabs').textContent = slabs.toLocaleString('en-US'); $('#bValue').textContent = fmtK(total);
+    const ach = ls.get('pack_ach_view_v1', { n: 0, total: 0, recent: [] });
+    $('#ms').innerHTML = ach.recent && ach.recent.length
+        ? ach.recent.slice(0, 5).map(d => `<span title="${esc(d.name)}">${esc(d.icon)}</span>`).join('') + (ach.n > 5 ? `<em>+${ach.n - 5}</em>` : '')
+        : '<em>Chưa mở khoá thành tích nào — xé pack để bắt đầu!</em>';
+    $('#cntAll').textContent = all.length; $('#cntBinder').textContent = all.length; $('#cntAch').textContent = ach.n + '/' + ach.total;
+    $('#wallet').textContent = (Wallet.locked() ? '🔒 ' : '') + 'Ví ' + fmt(wallet.bal); $('#wallet').classList.toggle('debt', wallet.bal < 0);
+    return { all, total };
+}
+
+// =========================================================
+// VẼ: BINDER
+// =========================================================
+function renderChips() {
+    const all = Store.all(), bs = binders();
+    if (!bs.some(b => b.id === S.bk)) S.bk = 'main';
+    $('#chips').innerHTML = bs.map(b => `<button class="sv-chip${b.id === S.bk ? ' on' : ''}" data-bk="${esc(b.id)}">${esc(b.name)} <i>${all.filter(c => bidOf(c) === b.id).length}</i></button>`).join('')
+        + (S.bk !== 'main' ? '<button class="sv-chip" data-act="bkMenu">✎ Sửa binder này</button>' : '')
+        + `<button class="sv-chip new" data-act="bkNew">＋ Binder mới <i>${bs.length}/${CFG.maxBinders}</i></button>`;
+}
+function renderRail() {
+    const pool = inBk(), by = new Map();
+    pool.forEach(c => {
+        const k = setKey(c), o = by.get(k) || { n: 0, label: c.sn || c.s || '?', best: c };
+        o.n++; if (rankOf(c) > rankOf(o.best) || (rankOf(c) === rankOf(o.best) && (valueOf(c) ?? 0) > (valueOf(o.best) ?? 0))) o.best = c; by.set(k, o);
+    });
+    if (S.set && !by.has(S.set)) S.set = '';
+    const items = [...by].sort((a, b) => b[1].n - a[1].n);
+    $('#rail').innerHTML = `<button class="sv-set${S.set ? '' : ' on'}" data-set=""><span class="ic">ALL</span><b>Tất cả</b><em>${pool.length} lá</em></button>`
+        + items.map(([k, o]) => `<button class="sv-set${S.set === k ? ' on' : ''}" data-set="${esc(k)}"><span class="ic">${o.best.i || o.best.a ? `<img loading="lazy" alt="" src="${esc(o.best.i || o.best.a)}" onerror="this.remove()">` : esc(String(o.label).slice(0, 3))}</span><b>${esc(o.label)}</b><em>${o.n} lá</em></button>`).join('');
+    railProgress(items);
+}
+// ---- tiến độ hoàn thành bộ + danh sách lá còn thiếu ----
+const CAT_SRC = { pokemon: 'data/pokemon.json', riftbound: 'data/riftbound.json', onepiece: 'data/onepiece.json', gundam: 'data/gundam.json', dbs: 'data/dragonball.json' };
+const CAT_DIR = { naruto: 'naruto', aot: 'aot', overlord: 'overlord', rascal: 'rascal' };
+const CAT_SKIP = { aot: /^pr$/i, overlord: /^pr$/i, rascal: /^pr$/i };
+const catRaw = {}, catSet = {}; let railTok = 0;
+const jget = u => catRaw[u] || (catRaw[u] = fetch(u).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }));
+function normCard(c) {      // cùng cách đọc dữ liệu như mk() trong pack.js
+    const so = c.set && typeof c.set === 'object' ? c.set : null, im = c.images || {};
+    return { setId: String((so && (so.id || so.name)) || c.setCode || c.set || c.setName || c.cardSet || ''),
+        code: String(c.cardCode || c.code || c.id || c.cardNo || c.number || c.cardNumber || ''), name: c.fullName || c.name || '?',
+        number: c.cardNumber || c.number || c.cardNo || '', rarity: String(c.rarity || ''),
+        image: c.imageUrl || im.large || im.small || (typeof c.image === 'string' ? c.image : '') };
+}
+function catalog(g, setId) {   // danh sách lá có thể ra của 1 bộ (null = game này chưa hỗ trợ, vd Yu-Gi-Oh! dùng API)
+    const k = g + '|' + setId;
+    return catSet[k] || (catSet[k] = (async () => {
+        const d = (u) => jget(u).then(x => Array.isArray(x) ? x : (x.cards || x.data || []));
+        let list;
+        if (CAT_SRC[g]) list = (await d(CAT_SRC[g])).map(normCard).filter(c => c.setId === setId);
+        else if (CAT_DIR[g]) list = (await d(`data/${CAT_DIR[g]}/${encodeURIComponent(setId)}.json`)).map(normCard);
+        else return null;
+        const skip = CAT_SKIP[g], seen = new Set();
+        return list.filter(c => c.code && c.image && !(skip && skip.test(c.rarity)) && !seen.has(c.code) && seen.add(c.code))
+            .sort((a, b) => String(a.number).localeCompare(String(b.number), undefined, { numeric: true }));
+    })().catch(() => null));
+}
+const haveOf = k => new Set(inBk().filter(c => setKey(c) === k).map(c => c.c));
+async function railProgress(items) {
+    const tok = ++railTok;
+    for (const [k, o] of items) {
+        const cat = await catalog(o.best.g, o.best.s || o.best.sn);
+        if (tok !== railTok) return;
+        if (!cat || !cat.length) continue;
+        const have = haveOf(k), got = cat.filter(c => have.has(c.code)).length, pct = Math.round(got / cat.length * 100);
+        const btn = $('#rail').querySelector(`[data-set="${CSS.escape(k)}"]`);
+        if (!btn || btn.querySelector('.pg')) continue;
+        btn.querySelector('em').textContent = `${got}/${cat.length} · ${pct}%`;
+        btn.insertAdjacentHTML('beforeend', `<span class="pg"><s style="width:${Math.max(pct, 2)}%"></s></span>`);
+        btn.title = `${o.label}: có ${got}/${cat.length} lá khác nhau`;
+    }
+}
+async function setBar() {
+    const k = S.set; if (!k) return;
+    const c0 = inBk().find(c => setKey(c) === k); if (!c0) return;
+    const cat = await catalog(c0.g, c0.s || c0.sn);
+    if (!cat || !cat.length || S.set !== k || $('#sum [data-act="missing"]')) return;
+    const have = haveOf(k), miss = cat.length - cat.filter(c => have.has(c.code)).length;
+    $('#sum').insertAdjacentHTML('beforeend', ` · hoàn thành <b>${Math.round((cat.length - miss) / cat.length * 100)}%</b> (${cat.length - miss}/${cat.length}) <button class="sv-btn sm" data-act="missing">${miss ? '📋 Thiếu ' + miss + ' lá' : '🎉 Đủ bộ'}</button>`);
+}
+async function showMissing() {
+    const c0 = inBk().find(c => setKey(c) === S.set); if (!c0) return;
+    const cat = await catalog(c0.g, c0.s || c0.sn); if (!cat) return;
+    const have = haveOf(S.set), miss = cat.filter(c => !have.has(c.code));
+    let missOv = $('#missOv');
+    if (!missOv) { missOv = document.createElement('div'); missOv.id = 'missOv'; missOv.className = 'ov'; document.body.append(missOv);
+        missOv.addEventListener('click', e => { if (e.target === missOv || e.target.closest('[data-x]')) missOv.classList.remove('on'); }); }
+    missOv.innerHTML = `<div class="dlg-box miss-box"><h3>${esc(c0.sn || c0.s)} · ${cat.length - miss.length}/${cat.length}</h3>`
+        + (miss.length ? `<div class="miss-grid">${miss.map(c => `<div class="miss-c" title="${esc(c.name)}"><img loading="lazy" alt="" src="${esc(c.image)}"><b>${c.number ? '#' + esc(c.number) : ''}</b><small>${esc(c.name)}</small></div>`).join('')}</div>` : '<p>Bạn đã sưu tầm đủ bộ này! 🎉</p>')
+        + `<div class="btns"><button class="sv-btn" data-x>Đóng</button></div></div>`;
+    missOv.classList.add('on');
+}
+document.addEventListener('click', e => { if (e.target.closest('[data-act="missing"]')) showMissing(); });
+function renderHammer() {
+    const h = ls.get(HAM_KEY, { n: 0, day: '' }), today = new Date().toISOString().slice(0, 10), can = h.day !== today && h.n < CFG.hammerMax;
+    $('#ham').innerHTML = `<span class="ic">🔨</span><span class="tx"><b>Búa đập slab · ${h.n}/${CFG.hammerMax}</b>${h.n ? 'Có búa! Đập slab để chấm lại, săn điểm cao hơn.' : 'Hết búa — nhận búa mỗi ngày.'}</span>`
+        + `<button class="sv-btn ${can ? 'gold' : ''}" data-act="claim" ${can ? '' : 'disabled'}>${can ? 'Nhận ' + Math.min(CFG.hammerClaim, CFG.hammerMax - h.n) + ' búa' : 'Đã nhận hôm nay'}</button>`;
+}
+function renderSell() {
+    $('#sell').innerHTML = `<span class="lbl">Bán nhanh</span>`
+        + `<button class="sv-chip${S.mode === 'quick' ? ' mode-on' : ''}" data-act="quick">⚡ Bán từng lá</button>`
+        + `<button class="sv-chip${S.mode === 'multi' ? ' mode-on' : ''}" data-act="multi">☑ Chọn nhiều</button>`
+        + `<button class="sv-chip" data-act="sellDup">Bán lá trùng</button><button class="sv-chip" data-act="sellCheap">Bán lá rẻ</button>`
+        + `<button class="sv-chip" data-act="sellSlab">Bán slab</button><button class="sv-chip warn" data-act="sellAll">Bán cả binder</button>`;
+    document.body.classList.toggle('mode-quick', S.mode === 'quick'); document.body.classList.toggle('mode-multi', S.mode === 'multi');
+}
+function coverHTML() {
+    const name = Store.name() || 'Người chơi', pool = inBk(), tot = pool.reduce((s, c) => s + (valueOf(c) || 0), 0);
+    const b = binders().find(x => x.id === S.bk), setC = S.set ? pool.find(c => setKey(c) === S.set) : null;
+    return `<div class="sv-cover"><div class="lg">${esc(setC ? (setC.sn || setC.s) : (b ? b.name : 'Binder'))}</div><small>Binder của</small><b>${esc(name)}</b><span>${pool.length} lá · ${fmt(tot)}</span></div>`;
+}
+let turning = false;
+function renderBinder(dir = 0) {
+    renderChips(); renderRail(); renderHammer(); renderSell();
+    const base = baseList(), counts = { all: base.length, hit: 0, rare: 0, common: 0 };
+    base.forEach(c => counts[groupOf(c)]++);
+    $('#itabs').innerHTML = Object.keys(TAB_NAME).map(t => `<button class="sv-itab ${t}${t === S.tab ? ' on' : ''}" data-tab="${t}">${TAB_NAME[t]}<i>${counts[t]}</i></button>`).join('');
+    shown = (S.tab === 'all' ? base : base.filter(c => groupOf(c) === S.tab)).slice().sort(sorters[S.sort]);
+    const pages = Math.max(1, Math.ceil(shown.length / CFG.perPage));
+    S.page = clamp(S.page, 0, pages - 1);
+    const slice = shown.slice(S.page * CFG.perPage, S.page * CFG.perPage + CFG.perPage);
+    const pool = inBk(), tot = pool.reduce((s, c) => s + (valueOf(c) || 0), 0);
+    $('#sum').innerHTML = `lá <b>${pool.length}</b>${shown.length !== pool.length ? ' · hiện ' + shown.length : ''} · giá <b>${fmtK(tot)}</b>${pool.some(c => c.gr) ? ' · ' + pool.filter(c => c.gr).length + ' slab' : ''}`;
+    setBar();
+    $('#pgL').innerHTML = coverHTML();
+
+    const draw = () => {
+        const grid = $('#grid'); grid.replaceChildren();
+        if (!Store.all().length) grid.innerHTML = '<div class="sv-empty"><div>Binder còn trống.<br>Xé một pack, các lá bài sẽ tự vào đây.</div><a href="pack.html">🎴 Đi xé pack</a></div>';
+        else if (!shown.length) grid.innerHTML = '<div class="sv-empty"><div>Không có lá nào khớp bộ lọc.</div></div>';
+        else for (let i = 0; i < CFG.perPage; i++) {
+            const c = slice[i];
+            if (!c) { grid.insertAdjacentHTML('beforeend', '<div class="sv-sl empty"></div>'); continue; }
+            const el = cardEl(c, { price: true });
+            el.title = `${c.n} · ${c.r || ''}${c.gr ? ' · ' + (c.co || 'PSA') + ' ' + c.gr : ''} · ${fmt(valueOf(c))}`;
+            if (SEL.has(c.id)) el.classList.add('sel');
+            grid.append(el);
+        }
+    };
+    const pr = $('#pgR');
+    if (dir && !turning && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        turning = true; const n = dir > 0 ? 'n' : 'p';
+        pr.className = 'sv-pg r out-' + n;
+        setTimeout(() => { draw(); pr.className = 'sv-pg r in-' + n; setTimeout(() => { pr.className = 'sv-pg r'; turning = false; }, 250); }, 165);
+    } else draw();
+    $('#pgNow').textContent = 'Trang ' + (S.page + 1); $('#pgAll').textContent = '/ ' + pages;
+    $('#prev').disabled = S.page <= 0; $('#next').disabled = S.page >= pages - 1;
+    renderBulk();
+}
+function renderBulk() {
+    const ids = [...SEL].filter(id => Store.get(id)), cards = ids.map(Store.get);
+    $('#bulk').classList.toggle('on', S.mode === 'multi');
+    $('#bulkInfo').innerHTML = `Đã chọn <b>${cards.length}</b> · nhận <b>${fmt(cards.reduce((s, c) => s + sellOf(c), 0))}</b>`;
+    $('#bulkSell').disabled = !cards.length;
+    const sel = $('#bulkMove'), cur = sel.value;
+    sel.innerHTML = '<option value="">Chuyển sang…</option>' + binders().filter(b => b.id !== S.bk).map(b => `<option value="${esc(b.id)}">${esc(b.name)}</option>`).join('');
+    sel.value = cur && [...sel.options].some(o => o.value === cur) ? cur : '';
+}
+
+// =========================================================
+// VẼ: TAB PHỤ
+// =========================================================
+function renderAchView() {
+    const a = ls.get('pack_ach_view_v1', { n: 0, total: 0, recent: [] });
+    $('#achTxt').textContent = `Đã mở khoá ${a.n}/${a.total} thành tích.`;
+    $('#achRow').innerHTML = (a.recent || []).length ? a.recent.map(d => `<div class="ach-b"><span>${esc(d.icon)}</span>${esc(d.name)}</div>`).join('') : '<p>Chưa có thành tích nào — xé pack để bắt đầu!</p>';
+}
+function renderHist() {
+    const cards = Store.all().slice().sort((a, b) => b.t - a.t), groups = [];
+    cards.forEach(c => {
+        const g = groups[groups.length - 1];
+        if (g && g.set === setKey(c) && Math.abs(g.t0 - c.t) <= CFG.gapMs) { g.cards.push(c); g.t0 = c.t; }
+        else groups.push({ set: setKey(c), t0: c.t, t1: c.t, cards: [c] });
+    });
+    $('#cntHist').textContent = groups.length;
+    $('#histList').innerHTML = groups.slice(0, histShown).map(g => {
+        const best = g.cards.slice().sort(sorters.rarity)[0], tot = g.cards.reduce((s, c) => s + (valueOf(c) || 0), 0);
+        return `<div class="hist-i"><span class="th" style="--aura:${TIER_COLOR[best.k] || '#94a3b8'}">${best.i || best.a ? `<img loading="lazy" alt="" src="${esc(best.i || best.a)}" onerror="this.remove()">` : ''}</span>`
+            + `<div><b>${esc(best.sn || best.s || '?')} <small>· ${esc(best.gn || best.g || '')}</small></b><small>${new Date(g.t1).toLocaleString('vi-VN')} · ${g.cards.length} lá · hay nhất: ${esc(best.n)} (${esc(best.r || '')})</small></div>`
+            + `<span class="v">${fmt(tot)}</span></div>`;
+    }).join('') || '<p>Chưa có lần xé nào.</p>';
+    $('#histMore').hidden = groups.length <= histShown;
+}
+function renderSkins() {
+    const sk = ls.get(SKIN_KEY, null), cur = sk ? sk.c1 + sk.c2 : SKINS[0][1] + SKINS[0][2];
+    $('#skins').innerHTML = SKINS.map((s, i) => `<button class="skin${cur === s[1] + s[2] ? ' on' : ''}" data-i="${i}"><i style="background:linear-gradient(160deg,${s[1]},${s[2]})"></i><span>${s[0]}</span></button>`).join('');
+    $('#skC1').value = sk ? sk.c1 : SKINS[0][1]; $('#skC2').value = sk ? sk.c2 : SKINS[0][2];
+}
+function applySkin() { const sk = ls.get(SKIN_KEY, null); const r = document.documentElement.style; r.setProperty('--c1', sk ? sk.c1 : SKINS[0][1]); r.setProperty('--c2', sk ? sk.c2 : SKINS[0][2]); }
+function showView(v) {
+    S.view = v;
+    $$('#nav button').forEach(b => b.classList.toggle('on', b.dataset.v === v));
+    $('#vBinder').hidden = v !== 'binder'; $('#vAch').hidden = v !== 'ach'; $('#vHist').hidden = v !== 'hist'; $('#vSkin').hidden = v !== 'skin';
+    if (v === 'ach') renderAchView(); if (v === 'hist') { histShown = 30; renderHist(); } if (v === 'skin') renderSkins();
+    if (v !== 'binder' && S.mode) setMode('');
+}
+function renderAll(dir) { renderSide(); renderHist(); if (S.view === 'binder') renderBinder(dir); else if (S.view === 'ach') renderAchView(); }
+
+// =========================================================
+// HÀNH ĐỘNG: BÁN / CHUYỂN / XOÁ
+// =========================================================
+function setMode(m) { S.mode = S.mode === m ? '' : m; if (S.mode !== 'multi') SEL.clear(); renderBinder(); }
+function sellCards(cards, label) {
+    if (!cards.length) return toast('Không có lá nào để bán.');
+    const total = Math.round(cards.reduce((s, c) => s + sellOf(c), 0) * 100) / 100, ids = cards.map(c => c.id), copy = cards.map(c => ({ ...c }));
+    Store.remove(ids); wallet.add(total); SEL.clear();
+    toast(`${label || 'Đã bán'} ${cards.length} lá · +${fmt(total)}`, () => { Store.restore(copy); wallet.add(-total); renderAll(); });
+    renderAll();
+}
+async function confirmSellOne(c) {
+    const slab = c.gr ? ` (slab <b>${esc(c.co || 'PSA')} ${c.gr}</b>)` : '';
+    return ask({ title: 'Bán lá này?', ok: `Bán ${fmt(sellOf(c))}`, danger: !!c.gr,
+        html: `<div>Bán <b>${esc(c.n)}</b>${slab}, nhận <b>${fmt(sellOf(c))}</b> (${Math.round(CFG.sellRate * 100)}% giá thị trường).</div><div>Có thể hoàn tác ngay sau khi bán.</div>` });
+}
+async function confirmSell(cards, title, extra = '', danger = false) {
+    if (!cards.length) return toast('Không có lá nào khớp.');
+    const total = cards.reduce((s, c) => s + sellOf(c), 0), slabs = cards.filter(c => c.gr).length;
+    const ok = await ask({ title, ok: `Bán ${cards.length} lá`, danger, html: `<div>Bán <b>${cards.length}</b> lá${slabs ? ` (gồm <b>${slabs}</b> slab)` : ''}, nhận <b>${fmt(total)}</b> (${Math.round(CFG.sellRate * 100)}% giá thị trường).</div>${extra}<div>Có thể hoàn tác ngay sau khi bán.</div>` });
+    if (ok) sellCards(cards);
+}
+function moveCards(ids, bk) {
+    ids.forEach(id => Store.update(id, { b: bk === 'main' ? undefined : bk }));
+    const name = (binders().find(b => b.id === bk) || {}).name || 'binder';
+    SEL.clear(); toast(`Đã chuyển ${ids.length} lá sang "${name}".`); renderAll();
+}
+async function bkNew() {
+    const bs = binders(); if (bs.length >= CFG.maxBinders) return toast(`Tối đa ${CFG.maxBinders} binder.`);
+    const n = prompt('Tên binder mới:', 'Binder ' + bs.length); if (n === null || !n.trim()) return;
+    const id = 'b' + Date.now().toString(36), list = ls.get(BK_KEY, []); list.push({ id, name: n.trim().slice(0, 20) }); ls.set(BK_KEY, list);
+    S.bk = id; S.set = ''; S.page = 0; renderBinder();
+}
+async function bkMenu() {
+    const list = ls.get(BK_KEY, []), b = list.find(x => x.id === S.bk); if (!b) return;
+    const n = prompt('Đổi tên binder (để trống = xoá binder):', b.name); if (n === null) return;
+    if (n.trim()) { b.name = n.trim().slice(0, 20); ls.set(BK_KEY, list); return renderBinder(); }
+    const cnt = Store.all().filter(c => bidOf(c) === b.id).length;
+    if (!await ask({ title: 'Xoá binder?', danger: true, ok: 'Xoá', html: `<div>Binder "<b>${esc(b.name)}</b>" sẽ bị xoá. <b>${cnt}</b> lá bên trong được chuyển về Binder chính.</div>` })) return;
+    Store.all().filter(c => bidOf(c) === b.id).forEach(c => Store.update(c.id, { b: undefined }));
+    ls.set(BK_KEY, list.filter(x => x.id !== b.id)); S.bk = 'main'; S.page = 0; renderAll();
+}
+
+// =========================================================
+// CHI TIẾT LÁ + CHẤM ĐIỂM + ĐẬP SLAB
+// =========================================================
+const gradeState = { id: '', co: 'PSA' };
+
+function openDetail(id) {
+    const c = Store.get(id); if (!c) return;
+    gradeState.id = id;
+    if (!c.gr && !c.ct) { Store.update(id, { ct: newCtr() }); c.ct = Store.get(id).ct; }
+    const bs = binders(), d = new Date(c.t), h = ls.get(HAM_KEY, { n: 0 });
+    let grade = '';
+    if (c.gr) grade = `<div class="row">Đã chấm: <b>${esc(c.co || 'PSA')} ${c.gr} · ${GRADE_NAME[Math.floor(c.gr)] || 'EX'}</b></div>`;
+    else if (canGrade(c)) {
+        const co = gradeState.co || 'PSA', dist = gradeDist(c.ct, co);
+        grade = `<div class="gp"><div class="row" style="display:flex;justify-content:space-between"><span>Gửi chấm điểm · lề ${c.ct[0]}/${100 - c.ct[0]}</span><span>${gradeState.co === 'TAG' ? '' : ''}Ví <b>${fmt(wallet.bal)}</b></span></div>`
+            + `<div class="dist">${dist.map(([g, p]) => `<i style="flex:${Math.max(p, .004)};background:${gradeColor(g)}"></i>`).join('')}</div>`
+            + `<div class="lbl">${dist.filter((_, i) => co === 'PSA' || i % 2 === 0).map(([g, p]) => `<span><b>${g}</b> ${Math.round(p * 100)}%</span>`).join('')}</div>`
+            + `<div class="btns"><button class="sv-btn ${co === 'PSA' ? 'gold' : ''}" data-x="grade" data-co="PSA">Chấm PSA<small>${fmt(GRADING.fee.PSA)} · điểm nguyên</small></button>`
+            + `<button class="sv-btn ${co === 'TAG' ? 'gold' : ''}" data-x="grade" data-co="TAG">Chấm TAG<small>${fmt(GRADING.fee.TAG)} · nửa điểm</small></button></div></div>`;
+    } else grade = '<div class="row">Chưa chấm (lá này chưa đủ giá trị để gửi chấm)</div>';
+    
+    const modalOv = $('#ov');
+    $('#ovBox').innerHTML = `<div class="ov-img" id="ovImg"></div><div class="ov-info">
+        <h3>${esc(c.n)}</h3>
+        <div class="row">Bộ: <b>${esc(c.sn || c.s || '—')}</b>${c.no ? ' · #' + esc(c.no) : ''}</div>
+        <div class="row">Độ hiếm: <b style="color:${TIER_COLOR[c.k] || '#fff'}">${esc(c.r || '—')}</b></div>${grade}
+        ${c.e ? `<div class="row">Lá lỗi: <b style="color:#fca5a5">${esc(c.e)}</b></div>` : ''}
+        <div class="val">${fmt(valueOf(c))}<small>bán được ${fmt(sellOf(c))}</small></div>
+        <div class="row">Xé lúc ${d.toLocaleString('vi-VN')}</div>
+        <div class="row">Binder: <select class="sv-sel" data-x="move">${bs.map(b => `<option value="${esc(b.id)}"${b.id === bidOf(c) ? ' selected' : ''}>${esc(b.name)}</option>`).join('')}</select></div>
+        <div class="ov-act">
+            <button class="sv-btn gold" data-x="sell">Bán ${fmt(sellOf(c))}</button>
+            ${c.gr ? `<button class="sv-btn" data-x="smash" ${h.n ? '' : 'disabled'}>🔨 Đập slab (1 búa)</button>` : ''}
+            <button class="sv-btn" data-x="close">Đóng</button><button class="sv-btn danger" data-x="del">Xoá</button>
+        </div></div>`;
+    modalOv.id = 'ov'; $('#ovImg').append(cardEl(c, { static: true })); modalOv.classList.add('on');
+}
+
+const closeDetail = () => $('#ov').classList.remove('on');
+
+async function doGrade(co) {
+    const c = Store.get(gradeState.id); if (!c || c.gr) return;
+    const fee = GRADING.fee[co];
+    if (wallet.bal < fee) return toast(`Không đủ tiền: cần ${fmt(fee)}, ví chỉ còn ${fmt(wallet.bal)}. Bán bớt lá để có tiền.`);
+    wallet.add(-fee);
+    $('#ovBox').innerHTML = `<div class="gres" style="width:100%"><div class="spin"></div><b>Đang gửi ${co} chấm điểm…</b><small style="color:var(--muted)">Kiểm tra lề · góc · cạnh · bề mặt</small></div>`;
+    await new Promise(r => setTimeout(r, 1300));
+    const ct = c.ct || newCtr(), g = rollGrade(ct, co), before = valueOf(c), m = (ERR_MULT[c.e] || 1) * gradeMult(g, co);
+    Store.update(c.id, { gr: g, co, m, ct });
+    const after = valueOf(Store.get(c.id)), priced = before != null && after != null, net = priced ? after - before - fee : -fee;
+    $('#ovBox').innerHTML = `<div class="gres" style="width:100%"><small style="color:var(--muted)">${co} đã chấm xong</small><div class="big" style="color:${gradeColor(g)}">${co} ${g}</div>`
+        + `<div>${esc(GRADE_NAME[Math.floor(g)] || 'EX')} · ${esc(c.n)}</div>${priced ? `<div style="color:var(--muted)">Giá lá: ${fmt(before)} → <b style="color:var(--ink)">${fmt(after)}</b></div>` : ''}`
+        + `<div style="font:800 20px var(--f-display);color:${net >= 0 ? 'var(--green)' : 'var(--pink)'}">${priced ? fmtS(net) + ' <small style="font:600 11px var(--f-body);color:var(--muted)">sau phí ' + fmt(fee) + '</small>' : 'Phí chấm ' + fmt(fee)}</div>`
+        + `<div style="margin-top:8px"><button class="sv-btn gold" data-x="again">Xem lá</button></div></div>`;
+    renderAll();
+}
+async function smash() {
+    const c = Store.get(gradeState.id), h = ls.get(HAM_KEY, { n: 0, day: '' });
+    if (!c || !c.gr || h.n < 1) return;
+    if (!await ask({ title: 'Đập slab?', danger: true, ok: '🔨 Đập', html: `<div>Dùng <b>1 búa</b> đập slab <b>${esc(c.co || 'PSA')} ${c.gr}</b> của "${esc(c.n)}". Lá trở về chưa chấm (đổi lại lề ngẫu nhiên) để bạn gửi chấm lại — <b>phí chấm tính lại</b>.</div>` })) return;
+    h.n--; ls.set(HAM_KEY, h);
+    Store.update(c.id, { gr: undefined, co: undefined, m: ERR_MULT[c.e] || undefined, ct: newCtr() });
+    toast('Slab vỡ tan! Lá đã về dạng chưa chấm.'); renderAll(); openDetail(c.id);
+}
+
+// =========================================================
+// SỰ KIỆN
+// =========================================================
+function bind() {
+    // lá bài trong binder
+    $('#grid').addEventListener('click', async e => {
+        const s = e.target.closest('.sv-sl[data-id]'); if (!s || drag.moved) return;
+        const id = s.dataset.id;
+        if (S.mode === 'quick') { const c = Store.get(id); if (c && await confirmSellOne(c)) { const c2 = Store.get(id); if (c2) sellCards([c2], 'Đã bán'); } }
+        else if (S.mode === 'multi') { SEL.has(id) ? SEL.delete(id) : SEL.add(id); s.classList.toggle('sel', SEL.has(id)); renderBulk(); }
+        else openDetail(id);
+    });
+    $('#chips').addEventListener('click', e => {
+        const b = e.target.closest('[data-bk]'), a = e.target.closest('[data-act]');
+        if (b) { S.bk = b.dataset.bk; S.set = ''; S.page = 0; SEL.clear(); renderBinder(); }
+        else if (a && a.dataset.act === 'bkNew') bkNew(); else if (a && a.dataset.act === 'bkMenu') bkMenu();
+    });
+    $('#rail').addEventListener('click', e => { const b = e.target.closest('[data-set]'); if (b) { S.set = b.dataset.set; S.page = 0; renderBinder(); } });
+    $('#itabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (b) { S.tab = b.dataset.tab; S.page = 0; renderBinder(); } });
+    $('#q').oninput = e => { S.q = e.target.value; S.page = 0; renderBinder(); };
+    $('#sortSel').onchange = e => { S.sort = e.target.value; S.page = 0; renderBinder(); };
+    $('#kindSel').onchange = e => { S.kind = e.target.value; S.page = 0; renderBinder(); };
+    $('#prev').onclick = () => { if (S.page > 0) { S.page--; renderBinder(-1); } };
+    $('#next').onclick = () => { S.page++; renderBinder(1); };
+    $('#nav').addEventListener('click', e => { const b = e.target.closest('[data-v]'); if (b) showView(b.dataset.v); });
+    $('#histMore').onclick = () => { histShown += 30; renderHist(); };
+    $('#achOpen').onclick = () => { location.href = 'pack.html#ach'; };
+
+    // hammer + bán
+    $('#ham').addEventListener('click', e => {
+        if (!e.target.closest('[data-act="claim"]')) return;
+        const h = ls.get(HAM_KEY, { n: 0, day: '' }), add = Math.min(CFG.hammerClaim, CFG.hammerMax - h.n);
+        h.n += add; h.day = new Date().toISOString().slice(0, 10); ls.set(HAM_KEY, h); toast(`Nhận ${add} búa!`); renderHammer();
+    });
+    $('#sell').addEventListener('click', e => {
+        const a = e.target.closest('[data-act]'); if (!a) return;
+        const act = a.dataset.act, pool = inBk();
+        if (act === 'quick') { setMode('quick'); if (S.mode === 'quick') toast('Bán từng lá: bấm vào lá, xác nhận là bán (có thể hoàn tác).'); }
+        else if (act === 'multi') setMode('multi');
+        else if (act === 'sellDup') { const d = dupIds(pool); confirmSell(pool.filter(c => d.has(c.id)), 'Bán lá trùng', '<div>Mỗi lá giữ lại 1 bản tốt nhất (slab cao điểm / giá cao nhất).</div>'); }
+        else if (act === 'sellCheap') confirmSell(pool.filter(c => !c.gr && (valueOf(c) ?? 0) < CFG.cheap), `Bán lá rẻ (dưới ${fmt(CFG.cheap)})`, '<div>Chỉ gồm lá chưa chấm.</div>');
+        else if (act === 'sellSlab') confirmSell(pool.filter(c => c.gr), 'Bán tất cả slab', '<div>Slab đã chấm sẽ bị bán hết.</div>', true);
+        else if (act === 'sellAll') confirmSell(pool, 'Bán cả binder', '<div><b>Toàn bộ</b> lá trong binder này sẽ bị bán.</div>', true);
+    });
+    $('#bulkAll').onclick = () => { shown.slice(S.page * CFG.perPage, S.page * CFG.perPage + CFG.perPage).forEach(c => SEL.add(c.id)); renderBinder(); };
+    $('#bulkDone').onclick = () => setMode('multi');
+    $('#bulkSell').onclick = () => confirmSell([...SEL].map(Store.get).filter(Boolean), 'Bán các lá đã chọn');
+    $('#bulkMove').onchange = e => { const ids = [...SEL]; if (e.target.value && ids.length) moveCards(ids, e.target.value); else e.target.value = ''; };
+
+    // chi tiết
+    $('#ov').onclick = async e => {
+        const x = e.target.closest('[data-x]');
+        if (e.target === $('#ov') || (x && x.dataset.x === 'close')) return closeDetail();
+        if (!x) return;
+        const k = x.dataset.x;
+        if (k === 'grade') { gradeState.co = x.dataset.co; return doGrade(x.dataset.co); }
+        if (k === 'again') return openDetail(gradeState.id);
+        if (k === 'smash') return smash();
+        if (k === 'sell') { const id = gradeState.id, c = Store.get(id); if (c && await confirmSellOne(c)) { const c2 = Store.get(id); if (c2) { closeDetail(); sellCards([c2], 'Đã bán'); } } return; }
+        if (k === 'del' && await ask({ title: 'Xoá lá này?', danger: true, ok: 'Xoá', html: '<div>Xoá khỏi sổ, <b>không nhận tiền</b> và không hoàn lại được.</div>' })) { Store.remove(gradeState.id); closeDetail(); renderAll(); }
+    };
+    $('#ov').addEventListener('change', e => { const m = e.target.closest('[data-x="move"]'); if (m) { moveCards([gradeState.id], m.value); closeDetail(); } });
+
+    // trang trí
+    $('#skins').addEventListener('click', e => { const b = e.target.closest('[data-i]'); if (b) { const s = SKINS[+b.dataset.i]; ls.set(SKIN_KEY, { c1: s[1], c2: s[2] }); applySkin(); renderSkins(); } });
+    const custom = () => { ls.set(SKIN_KEY, { c1: $('#skC1').value, c2: $('#skC2').value }); applySkin(); $$('.skin').forEach(s => s.classList.remove('on')); };
+    $('#skC1').oninput = $('#skC2').oninput = custom;
+    $('#skReset').onclick = () => { localStorage.removeItem(SKIN_KEY); applySkin(); renderSkins(); };
+
+    // tên + sao lưu
+    $('#ownerName').onclick = () => { const n = prompt('Tên hiển thị trên binder:', Store.name()); if (n !== null) { Store.setName(n); renderAll(); } };
+    $('#exportBtn').onclick = () => {
+        const out = { v: 1, at: Date.now() };
+        [KEY, W_KEY, BK_KEY, SKIN_KEY, HAM_KEY, JOIN_KEY].forEach(k => { const v = k === KEY ? { v: 1, name: Store.name(), cards: Store.all() } : ls.get(k, null); if (v != null) out[k] = v; });
+        const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(new Blob([JSON.stringify(out)], { type: 'application/json' })), download: 'so-tu-vi-backup.json' });
+        document.body.append(a); a.click(); a.remove(); toast('Đã xuất file sao lưu.');
+    };
+    $('#importBtn').onclick = () => $('#importFile').click();
+    $('#importFile').onchange = async e => {
+        const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+        let data; try { data = JSON.parse(await f.text()); } catch (err) { return toast('File không hợp lệ.'); }
+        if (!data || !data[KEY] || !Array.isArray(data[KEY].cards)) return toast('File không phải bản sao lưu sổ  .');
+        if (!await ask({ title: 'Nhập file sao lưu?', danger: true, ok: 'Ghi đè', html: `<div>Sổ hiện tại sẽ bị <b>thay bằng</b> bản trong file (<b>${data[KEY].cards.length}</b> lá).</div>` })) return;
+        Store.remove(Store.all().map(c => c.id));
+        data[KEY].cards.forEach(c => c && c.id && BinderStore.add(c));
+        Store.setName(data[KEY].name || '');
+        [W_KEY, BK_KEY, SKIN_KEY, HAM_KEY, JOIN_KEY].forEach(k => data[k] != null ? ls.set(k, data[k]) : localStorage.removeItem(k));
+        Store.reload(); applySkin(); S.bk = 'main'; S.set = ''; renderAll(); toast('Đã nhập xong.');
+    };
+
+    // lật trang bằng vuốt ngang / phím mũi tên
+    const sp = $('#spread');
+    sp.addEventListener('pointerdown', e => { if (e.pointerType === 'mouse' && e.button !== 0) return; drag.x = e.clientX; drag.y = e.clientY; drag.on = true; drag.moved = false; });
+    sp.addEventListener('pointermove', e => { if (drag.on && Math.abs(e.clientX - drag.x) > 12) drag.moved = true; });
+    window.addEventListener('pointerup', e => {
+        if (!drag.on) return; drag.on = false;
+        const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+        if (Math.abs(dx) > 60 && Math.abs(dy) < 60) { if (dx < 0) { if (S.page < Math.ceil(shown.length / CFG.perPage) - 1) { S.page++; renderBinder(1); } } else if (S.page > 0) { S.page--; renderBinder(-1); } }
+        setTimeout(() => { drag.moved = false; }, 0);
+    });
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') { closeDetail(); if (S.mode) setMode(S.mode); return; }
+        if (/^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement.tagName) || $('#ov').classList.contains('on') || $('#dlg').classList.contains('on') || S.view !== 'binder') return;
+        if (e.key === 'ArrowLeft' && S.page > 0) { S.page--; renderBinder(-1); }
+        if (e.key === 'ArrowRight' && S.page < Math.ceil(shown.length / CFG.perPage) - 1) { S.page++; renderBinder(1); }
+    });
+    const sync = () => { Store.reload(); renderAll(); };      // xé pack ở tab khác / quay lại bằng nút Back -> cập nhật
+    window.addEventListener('pageshow', e => { if (e.persisted) sync(); });
+}
+const drag = { on: false, x: 0, y: 0, moved: false };
+applySkin(); bind();
+BinderStore.ready.then(() => renderAll());
+BinderStore.on('change', () => renderAll());
+window.addEventListener('pack:state', () => renderAll());      // cloud-auth.js kéo thống kê / điểm từ mây về xong
+})();
+</script>
+
+</body>
+</html>

@@ -1022,6 +1022,28 @@ async function loadFileGame(tcg) {
     await loadFileSet(tcg, sets[0].id);
 }
 
+// ---- Nút "Xé pack": mở pack.html ở TAB MỚI (trang riêng, nhẹ, không làm nặng trang tra giá) ----
+function addPackButton() {
+    if ($('#packOpenBtn')) return;
+    const a = document.createElement('a');
+    a.id = 'packOpenBtn';
+    a.target = '_blank';
+    a.rel = 'noopener';
+    a.textContent = ' Xé pack';
+    a.style.cssText = 'position:fixed;right:18px;bottom:18px;z-index:60;padding:12px 18px;border-radius:999px;'
+        + 'background:linear-gradient(135deg,var(--g1,#FFD43B),var(--g2,#F59F00));color:#14213D;font-weight:700;'
+        + 'text-decoration:none;box-shadow:0 8px 24px #0008;font-family:inherit';
+    // link theo game + bộ đang xem; pack.js tự bỏ qua bộ không tồn tại
+    a.addEventListener('click', () => {
+        const q = new URLSearchParams({ game: currentGame });
+        const set = $('#setFilter') && $('#setFilter').value;
+        if (set && set !== 'all') q.set('set', set);
+        a.href = 'pack.html?' + q;
+    });
+    a.href = 'pack.html';
+    document.body.appendChild(a);
+}
+
 // ---- Danh sách game TCG trong dropdown ----
 // Thêm game mới: thêm 1 dòng vào đây (soon: true = hiện mờ, "Sắp có"), rồi viết hàm load() cho game đó.
 const TCG_GAMES = [
@@ -1120,6 +1142,7 @@ async function init() {
     syncGameUI();
     initGameTiles();
     hydrateLogos();
+    addPackButton();
     preloadLogoFiles();
 
     $('#importButton').onclick = () => $('#jsonFile').click();
