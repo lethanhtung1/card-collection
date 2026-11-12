@@ -431,7 +431,22 @@ function pickCard(list) {                                   // chọn 1 lá tron
 
 const GOD_PACK_ODDS = 0.001;    // tỉ lệ GOD PACK mỗi pack (0.001 = 1/1000): cả pack toàn lá hiếm nhất
 const BOX_PACKS = 36;           // 1 hộp = 36 pack: xé từng pack (như thường) hoặc xé nhanh hết số pack còn lại
-let box = null, boxRefresh = () => {};            // box = { left, setId } khi đang mở hộp
+let box = null, boxRefresh = () => {};            // box = { left, setId, started } khi đang mở hộp
+
+// ---- HỘP ×36: mỗi lần mở hộp phải chờ BOX_COOLDOWN_MS mới mở lại được. Xé lẻ từng pack thì KHÔNG giới hạn. ----
+// Thời gian chờ bắt đầu tính từ pack đầu tiên xé trong hộp. Lưu ở localStorage nên chỉ là giới hạn phía trình duyệt.
+const BOX_COOLDOWN_MS = 5 * 60 * 1000;
+const BOX_CD_KEY = 'pack_box_cd_v1';
+const boxMsLeft = () => { const t = +readLS(BOX_CD_KEY, 0) || 0, now = Date.now(); return t > 0 && t <= now ? Math.max(0, t + BOX_COOLDOWN_MS - now) : 0; };
+const fmtMs = ms => { const t = Math.ceil(ms / 1000); return Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0'); };
+const startBoxCooldown = () => { writeLS(BOX_CD_KEY, Date.now()); updateQuota(); };
+function updateQuota() {
+    const el = $('#packQuota'); if (!el) return;
+    const ms = boxMsLeft();
+    el.textContent = ms ? `📦 Hộp ×${BOX_PACKS} mở lại sau ${fmtMs(ms)} · xé lẻ không giới hạn` : `📦 Hộp ×${BOX_PACKS} đã sẵn sàng · xé lẻ không giới hạn`;
+    el.classList.toggle('cool', ms > 0);
+}
+setInterval(() => { updateQuota(); if (view === 'stage' && !box) boxRefresh(); }, 1000);   // mỗi giây: đồng hồ đếm ngược + chữ trên nút hộp
 const boxSort = (a, b) => TIERS.indexOf(tierOf(b.rarity)) - TIERS.indexOf(tierOf(a.rarity)) || (usdOf(b) ?? 0) - (usdOf(a) ?? 0);   // lá hiếm/đắt lên đầu
 function godToast() {
     const d = document.createElement('div'); d.textContent = '🌟 GOD PACK! 🌟';
@@ -970,7 +985,7 @@ async function openStage() {
     $('#stageCap').innerHTML = `Bạn đang xé: ${esc(shortName(s))}<small class="tr-hint">Vuốt ngang qua mép trên để xé pack</small>`;
     show('stage');
     tearReset();                                   // đặt lại trạng thái xé (sau khi đã hiện để đo được bề rộng pack)
-    boxRefresh();
+    boxRefresh(); updateQuota();
     $('#packWrap').focus({ preventScroll: true });
 }
 const backToPicker = () => { box = null; show('select'); };
@@ -1028,6 +1043,9 @@ html.tr-on, html.tr-on body { touch-action: none; overscroll-behavior: none; -we
 .tr-quick { display: block; margin: 14px auto 0; padding: 9px 18px; border-radius: 999px; font: inherit; font-weight: 600; cursor: pointer;
     color: inherit; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.28); }
 .tr-quick.is-hidden { visibility: hidden; }
+.pack-quota { display: block; margin: 10px auto 0; text-align: center; font-size: 12.5px; font-weight: 600; opacity: .9; }
+.pack-quota.cool { color: #fdba74; }
+.tr-box.is-cool { opacity: .55; }
 @keyframes tr-finger { 0% { opacity: 0; transform: translateX(0) scale(.9); } 15% { opacity: 1; transform: translateX(0) scale(1); }
     75% { opacity: 1; } 100% { transform: translateX(calc(var(--pw) * .82)) scale(1); opacity: 0; } }
 @keyframes tr-nudge { 0%, 100% { transform: translateX(0) rotate(0); } 25% { transform: translateX(-6px) rotate(-1.4deg); }
@@ -1050,9 +1068,11 @@ function initTear() {
     $('#stage').append(quick);
     const boxBtn = Object.assign(document.createElement('button'), { type: 'button', className: 'tr-box', textContent: `📦 Xé hộp ×${BOX_PACKS} (nhanh)` });
     $('#stage').append(boxBtn);
+    $('#stage').append(Object.assign(document.createElement('div'), { id: 'packQuota', className: 'pack-quota' }));
     boxRefresh = () => {
         const s = list[cur]; if (box && (!s || box.setId !== s.id)) box = null;      // đổi sang bộ khác = bỏ hộp đang mở
-        boxBtn.textContent = box ? `⚡ Xé nhanh hết hộp (còn ${box.left} pack)` : `📦 Mở hộp ×${BOX_PACKS} pack`;
+        boxBtn.textContent = box ? `⚡ Xé nhanh hết hộp (còn ${box.left} pack)` : (boxMsLeft() ? `⏳ Hộp ×${BOX_PACKS} · chờ ${fmtMs(boxMsLeft())}` : `📦 Mở hộp ×${BOX_PACKS} pack`);
+        boxBtn.classList.toggle('is-cool', !box && boxMsLeft() > 0);
         const cap = $('#stageCap'), old = cap.querySelector('.box-left'); if (old) old.remove();
         if (box) cap.insertAdjacentHTML('beforeend', `<small class="box-left">📦 Hộp ×${BOX_PACKS} · còn ${box.left} pack — xé từng pack hoặc xé nhanh hết</small>`);
     };
@@ -1087,6 +1107,7 @@ function initTear() {
         vib([12, 40, 24]);
         kick();
         pack = generatePack(cards, game.pack);
+        if (box && !box.started) { box.started = true; startBoxCooldown(); }
         if (box && --box.left <= 0) box = null;                    // xé từng pack trong hộp
         if (pack._god) godToast();
         savePackToBinder();
@@ -1102,8 +1123,9 @@ function initTear() {
         quick.classList.add('is-hidden'); boxBtn.classList.add('is-hidden');
         vib([12, 40, 24]); kick();
         const n = box ? box.left : BOX_PACKS, subs = Array.from({ length: n }, () => generatePack(cards, game.pack));
+        if (!box || !box.started) startBoxCooldown();
         box = null;
-        pack = subs.flat().sort(boxSort); pack._subs = subs;      // lá hiếm nhất lên đầu pack._god = subs.some(s => s._god);
+        pack = subs.flat().sort(boxSort); pack._subs = subs; pack._god = subs.some(s => s._god);      // lá hiếm nhất lên đầu
         savePackToBinder();
         if (pack._god) godToast();
         sumDone = false; sumNewHTML = '';
@@ -1155,7 +1177,7 @@ function initTear() {
     window.addEventListener('pointerup', release);
     window.addEventListener('pointercancel', release);
 
-    quick.onclick = commit; boxBtn.onclick = () => { if (committed) return; if (!box) { box = { left: BOX_PACKS, setId: (list[cur] || {}).id }; boxRefresh(); } else commitBoxRest(); };
+    quick.onclick = commit; boxBtn.onclick = () => { if (committed) return; if (!box) { if (boxMsLeft() > 0) { rsToast(`Hộp ×${BOX_PACKS} mở lại sau ${fmtMs(boxMsLeft())} — xé lẻ từng pack thì không giới hạn.`); return; } box = { left: BOX_PACKS, setId: (list[cur] || {}).id }; boxRefresh(); } else commitBoxRest(); };
     w.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); commit(); } });
 
     tearReset = () => {                           // gọi mỗi lần mở màn xé
