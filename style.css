@@ -1973,3 +1973,9 @@ html[data-theme="dark"] .theme-toggle { color: #FFD9A0; }
         animation-play-state: running;
     }
 }
+.logo-icon {
+  width: 24px;         /* Chỉnh chiều rộng tùy thích */
+  height: 24px;        /* Chỉnh chiều cao tùy thích */
+  object-fit: contain; /* Giúp ảnh không bị méo */
+  vertical-align: middle; /* Căn lề thẳng hàng với chữ bên cạnh */
+}
