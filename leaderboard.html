@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bảng xếp hạng · Xé Pack</title>
+    <link rel="icon" type="image/png" href="/Favicon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/leaderboard.css">
+</head>
+<body>
+    <!-- cloud-auth.js sẽ tự gắn nút tài khoản (đăng nhập / tên người chơi) vào <header> này -->
+    <header class="lb-top">
+        <a href="pack.html" class="lb-back">← Về trang xé pack</a>
+        <span class="lb-brand">Xé Pack</span>
+    </header>
+
+    <main class="lb-wrap">
+        <h1 class="lb-title">🏆 Bảng xếp hạng</h1>
+        <p class="lb-sub">Điểm = lãi/lỗ tích luỹ sau khi trừ giá pack và phí chấm. Chỉ để giải trí.</p>
+
+        <section class="lb-me" id="lbMe" hidden></section>
+
+        <div class="lb-tools">
+            <input type="search" id="lbQ" placeholder="Tìm tên người chơi…" autocomplete="off" aria-label="Tìm người chơi">
+            <div class="lb-seg" role="group" aria-label="Sắp xếp">
+                <button type="button" data-sort="score" class="on">Lãi/lỗ</button>
+                <button type="button" data-sort="packs">Số pack</button>
+            </div>
+            <button type="button" id="lbRefresh" class="lb-refresh" title="Tải lại">↻</button>
+        </div>
+
+        <div class="lb-msg" id="lbMsg" role="status"></div>
+        <ol class="lb-list" id="lbList" aria-live="polite"></ol>
+        <p class="lb-upd" id="lbUpd"></p>
+    </main>
+
+    <!-- Giữ đúng thứ tự và đường dẫn như cuối pack.html (nếu pack.html có thêm thẻ nạp thư viện Supabase thì copy y chang vào đây, đặt TRƯỚC supabase-config.js) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+    <script src="js/core/supabase-config.js"></script>
+    <script src="js/pages/binder-store.js"></script>
+    <script src="js/core/cloud-auth.js"></script>
+    <script src="js/pages/leaderboard.js"></script>
+</body>
+</html>

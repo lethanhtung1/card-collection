@@ -412,3 +412,28 @@ button.big{padding:13px 22px;font-size:16px;border-radius:12px}
 .pack .pk .kp-art img { filter: saturate(1.1) contrast(1.05); }
 .pack .pk .kp-band { height: 24%; background: none; }   /* lớp tối đã chuyển sang .pk::after để tan mượt */   /* lớp phủ đáy lùi xuống thấp hơn */
 .pack .pk-holo { opacity: calc(.04 + var(--hyp) * .16); }
+/* ===== HEADER GỌN ===== */
+header { gap: 2px; padding: 8px 16px; }
+header h1 { margin-right: 10px; }
+
+header .btn, header button {
+    background: none; border: 0; border-radius: 6px;
+    padding: 6px 10px; font-size: 13px; font-weight: 600;
+    color: var(--muted); white-space: nowrap;
+}
+header .btn:hover, header button:hover { background: #ffffff0f; color: var(--text); border: 0; }
+
+/* ô chọn game: nhỏ lại, hết dạng pill */
+header select { border-radius: 6px; padding: 6px 10px; font-size: 13px; min-width: 0; background: none; border-color: var(--line); }
+
+/* ví: giữ nổi bật nhưng nhỏ gọn */
+#wlPill { padding: 4px 10px !important; font-size: 12.5px !important; border-radius: 6px !important; }
+
+/* thành tích: số 20/22 nhạt đi */
+#achBtn small { font-size: 11px; opacity: .8; }
+
+/* màn nhỏ: ẩn chữ thừa */
+@media (max-width: 900px) {
+    header .btn, header button { padding: 6px 8px; font-size: 12.5px; }
+}header select { background-color: var(--panel); color: var(--text); color-scheme: dark; }
+select option, select optgroup { background-color: var(--panel); color: var(--text); }

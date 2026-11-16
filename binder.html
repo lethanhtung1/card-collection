@@ -437,6 +437,7 @@ a { color: inherit; }
 <div class="toast" id="toast"><span id="toastTx"></span><button id="toastUndo" hidden>Hoàn tác</button></div>
 
 <script>
+
 (function () {
 'use strict';
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
@@ -696,6 +697,20 @@ function renderChips() {
         + (S.bk !== 'main' ? '<button class="sv-chip" data-act="bkMenu">✎ Sửa binder này</button>' : '')
         + `<button class="sv-chip new" data-act="bkNew">＋ Binder mới <i>${bs.length}/${CFG.maxBinders}</i></button>`;
 }
+const TCGDEX_IMG = /^(https:\/\/assets\.tcgdex\.net\/)([a-z]{2})\/([^/]+)\/([^/]+)\//i;
+const PTCG_IMG = /^https:\/\/images\.pokemontcg\.io\/([^/]+)\//i;
+function setArt(s) {
+    const hero = s.hero || '';
+    let logo = '', symbol = '', m;
+    if ((m = TCGDEX_IMG.exec(hero))) {
+        logo = `${m[1]}${m[2]}/${m[3]}/${m[4]}/logo.png`;
+        symbol = `${m[1]}univ/${m[3]}/${m[4]}/symbol.png`;
+    } else if ((m = PTCG_IMG.exec(hero))) {
+        logo = `https://images.pokemontcg.io/${m[1]}/logo.png`;
+        symbol = `https://images.pokemontcg.io/${m[1]}/symbol.png`;
+    }
+    return { logo, symbol };
+}
 function renderRail() {
     const pool = inBk(), by = new Map();
     pool.forEach(c => {
@@ -705,7 +720,15 @@ function renderRail() {
     if (S.set && !by.has(S.set)) S.set = '';
     const items = [...by].sort((a, b) => b[1].n - a[1].n);
     $('#rail').innerHTML = `<button class="sv-set${S.set ? '' : ' on'}" data-set=""><span class="ic">ALL</span><b>Tất cả</b><em>${pool.length} lá</em></button>`
-        + items.map(([k, o]) => `<button class="sv-set${S.set === k ? ' on' : ''}" data-set="${esc(k)}"><span class="ic">${o.best.i || o.best.a ? `<img loading="lazy" alt="" src="${esc(o.best.i || o.best.a)}" onerror="this.remove()">` : esc(String(o.label).slice(0, 3))}</span><b>${esc(o.label)}</b><em>${o.n} lá</em></button>`).join('');
+                      + items.map(([k, o]) => {
+            const card = o.best.i || o.best.a || '';
+            const ar = setArt({ id: o.best.s || o.best.sn, hero: card });
+            const srcs = [ar.logo, ar.symbol, card].filter(Boolean);
+            const img = srcs.length
+                ? `<img loading="lazy" alt="" src="${esc(srcs[0])}" data-f="${esc(srcs.slice(1).join(' '))}" data-c="${esc(card)}" onerror="var f=(this.dataset.f||'').split(' ').filter(Boolean);if(!f.length){this.remove();return}this.src=f.shift();this.dataset.f=f.join(' ');this.parentNode.classList.toggle('lg',this.src!==this.dataset.c)">`
+                : esc(String(o.label).slice(0, 3));
+            return `<button class="sv-set${S.set === k ? ' on' : ''}" data-set="${esc(k)}"><span class="ic${srcs[0] && srcs[0] !== card ? ' lg' : ''}">${img}</span><b>${esc(o.label)}</b><em>${o.n} lá</em></button>`;
+        }).join('');
     railProgress(items);
 }
 // ---- tiến độ hoàn thành bộ + danh sách lá còn thiếu ----
@@ -961,7 +984,10 @@ const closeDetail = () => $('#ov').classList.remove('on');
 async function doGrade(co) {
     const c = Store.get(gradeState.id); if (!c || c.gr) return;
     const fee = GRADING.fee[co];
-    if (wallet.bal < fee) return toast(`Không đủ tiền: cần ${fmt(fee)}, ví chỉ còn ${fmt(wallet.bal)}. Bán bớt lá để có tiền.`);
+    if (!Wallet.canAfford(fee)) {
+    if (Wallet.locked()) { Wallet.openDebtDialog(); return; }
+    return toast(`Chấm xong sẽ vượt hạn mức nợ ${fmt(Wallet.cfg.debtLimit)}: phí ${fmt(fee)}, ví đang ${fmt(wallet.bal)}. Bán bớt lá hoặc phá sản.`);
+}
     wallet.add(-fee);
     $('#ovBox').innerHTML = `<div class="gres" style="width:100%"><div class="spin"></div><b>Đang gửi ${co} chấm điểm…</b><small style="color:var(--muted)">Kiểm tra lề · góc · cạnh · bề mặt</small></div>`;
     await new Promise(r => setTimeout(r, 1300));

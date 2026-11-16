@@ -216,25 +216,8 @@
     }
 
     // ---- bảng xếp hạng ----
-    async function openLeaderboard() {
-        if (!sb) return;
-        const list = h('ol', {}, h('li', {}, '', 'Đang tải…', ''));
-        const box = h('div', { class: 'au-box au-lb' }, h('button', { type: 'button', class: 'au-x', 'aria-label': 'Đóng', onclick: () => ov.remove() }, '✕'), h('h3', {}, '🏆 Bảng xếp hạng'), list);
-        const ov = h('div', { class: 'au-back', role: 'dialog' }, box);
-        ov.addEventListener('mousedown', e => { if (e.target === ov) ov.remove(); });
-        document.body.append(ov);
-        try {
-            const rows = await PlayerSync.leaderboard(50);
-            const myName = root.BinderStore ? root.BinderStore.name() : '';
-            list.replaceChildren(...(rows.length ? rows.map((r, i) => {
-                const li = h('li', { class: user && myName && r.display_name === myName ? 'me' : '' },
-                    h('b', {}, '#' + (i + 1)), h('span', {}, r.display_name, h('small', {}, r.packs + ' pack')),
-                    h('b', { style: 'color:' + (r.score >= 0 ? '#4ade80' : '#fb7185') }, (r.score >= 0 ? '+$' : '−$') + Math.abs(r.score).toLocaleString('en-US', { maximumFractionDigits: 2 })));
-                return li;
-            }) : [h('li', {}, '', 'Chưa có ai trên bảng — hãy xé pack đầu tiên!', '')]));
-        } catch (e) { list.replaceChildren(h('li', {}, '', 'Không tải được bảng xếp hạng: ' + viErr(e.message), '')); }
-    }
-
+   
+function openLeaderboard() { location.href = 'leaderboard.html'; }
     // ---- nút tài khoản trên thanh header ----
     const ST = { local: '☁ Chưa đồng bộ', syncing: '⟳ Đang đồng bộ…', synced: '☁ Đã lưu lên mây', offline: '⚠ Mất mạng — sẽ đồng bộ sau', error: '⚠ Lỗi đồng bộ, đang thử lại' };
     let chip = null, pop = null;

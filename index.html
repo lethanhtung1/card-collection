@@ -3,11 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CheckPrice – Check prices for TCG games</title>
+    <title>CheckPrice – Tra cứu giá thẻ bài TCG</title>
     <meta name="description" content="CheckPrice: tra giá thị trường, độ hiếm và thông tin thẻ bài cho Pokémon TCG, Riftbound, One Piece, Yu-Gi-Oh! và các game TCG khác.">
+    <meta name="application-name" content="CheckPrice">
     <meta name="color-scheme" content="light dark">
     <meta name="theme-color" content="#FFD27A">
-    <link rel="icon" type="image/png" href="Favicon.png">
+
+    <!-- Khai báo Tên Trang Web & Chia sẻ mạng xã hội (Open Graph) -->
+    <meta property="og:site_name" content="CheckPrice">
+    <meta property="og:title" content="CheckPrice – Check prices for TCG games">
+    <meta property="og:description" content="Tra giá thị trường, độ hiếm và thông tin thẻ bài cho Pokémon TCG, Riftbound, One Piece, Yu-Gi-Oh! và các game TCG khác.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://checkpricetcg.vercel.app/">
+    <meta property="og:image" content="https://checkpricetcg.vercel.app/Favicon.png">
+
+    <!-- Favicon chuẩn cho cả Trình duyệt, Điện thoại và Google Search -->
+    <link rel="icon" href="/Favicon.png" type="image/png" sizes="48x48">
+    <link rel="icon" href="/Favicon.png" type="image/png" sizes="96x96">
+    <link rel="apple-touch-icon" href="/Favicon.png">
+    <link rel="shortcut icon" href="/Favicon.png" type="image/png">
+
+    <!-- Dữ liệu có cấu trúc giúp Google hiển thị đúng Tên Trang Web (Site Name) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "CheckPrice",
+      "alternateName": ["CheckPrice TCG", "Check Price TCG"],
+      "url": "https://checkpricetcg.vercel.app/"
+    }
+    </script>
+
     <!-- Đặt giao diện sáng/tối TRƯỚC khi CSS vẽ, tránh nháy trắng -->
     <script>
         (function () {

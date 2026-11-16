@@ -1,129 +1,52 @@
-/* binder-polish.css — nạp SAU khối <style> của binder.html:
- *   <link rel="stylesheet" href="binder-polish.css">
- * Chỉ ghi đè giao diện, không đổi HTML/JS. Muốn bỏ thì xoá dòng <link>.
- * Ý tưởng: giữ binder là nhân vật chính (bìa da có đường khâu, trang có túi đựng bài),
- * mọi thứ xung quanh lặng xuống: phẳng hơn, ít viền sáng, cùng một nhịp bo góc và khoảng cách. */
 
-:root {
-    --card: #0e1930;            /* nền khối: đặc, không còn trong suốt chồng gradient */
-    --card2: #14213b;
-    --brd: #ffffff1a;
-    --r-lg: 16px; --r-md: 10px; --r-sm: 6px;
-    --paper: #0b1326;           /* nền trang binder: tối trung tính để thẻ nổi lên */
-    --pocket: #ffffff08;
+
+/* binder-polish-v2.css — nạp SAU binder-polish.css:
+ *   <link rel="stylesheet" href="css/binder-polish-v2.css">
+ * Chỉ ghi đè CSS, không cần đổi HTML/JS. Muốn bỏ thì xoá dòng <link>. */
+
+/* ===== SỬA LỖI: khối .sv-pts trong binder.html viết sai "justify-between" (không tồn tại) -> thiếu căn 2 đầu ===== */
+.sv-pts { justify-content: space-between; }
+.sv-pts.neg { background: linear-gradient(160deg, #3a0f1f99, #081a3c99); border-color: #fb718555; }
+.sv-pts:not(.neg) { background: linear-gradient(160deg, #0f3a2299, #081a3c99); border-color: #4ade8055; }
+
+/* ===== cột trái: dính theo khi cuộn, cuộn riêng nếu dài hơn màn hình ===== */
+@media (min-width: 961px) {
+    .sv-side { position: sticky; top: 12px; max-height: calc(100dvh - 24px); overflow-y: auto; padding-right: 4px;
+        scrollbar-width: thin; scrollbar-color: #ffffff33 transparent; }
 }
 
-body {
-    background:
-        radial-gradient(900px 480px at 78% -10%, #1b366c55, transparent 70%),
-        linear-gradient(#060b17, #0a1426 60%, #060b17);
-    background-attachment: fixed;
-}
+/* ===== thanh bộ bài: mờ dần hai đầu, ô chọn rõ hơn ===== */
+.sv-rail { -webkit-mask-image: linear-gradient(90deg, transparent, #000 18px, #000 calc(100% - 18px), transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 18px, #000 calc(100% - 18px), transparent); padding-inline: 14px; }
+.sv-set { transition: transform .18s ease; }
+.sv-set:hover { transform: translateY(-3px); }
+.sv-set .ic { transition: box-shadow .2s, border-color .2s; }
+.sv-set:hover .ic { border-color: #ffffff77; }
+.sv-set .pg { width: 56px; height: 5px; }
+.sv-set .pg s { box-shadow: 0 0 6px #ffcb0588; }
 
-/* ===== khung trang ===== */
-.sv-wrap { grid-template-columns: 284px minmax(0, 1fr); gap: 28px; padding-top: 18px; }
-.sv-title { font-size: 24px; text-shadow: none; letter-spacing: .01em; }
-.sv-brand { text-shadow: 0 2px 0 #7a4a0099; }
-.sv-wallet { background: var(--card); padding: 6px 14px; }
+/* ===== banner "Búa đập slab": nút chính to và nổi hơn ===== */
+.sv-ham { padding: 12px 16px; }
+.sv-ham .sv-btn.gold { padding: 11px 22px; font-size: 15px; border-radius: 12px; box-shadow: 0 3px 0 #b8860b, 0 0 18px #ffcb0555; }
+.sv-ham .sv-btn.gold:hover:not(:disabled) { transform: translateY(-1px); }
 
-/* ===== cột trái ===== */
-.sv-side { gap: 14px; }
-.sv-tc { border-width: 1px; border-color: #ffcb0566; border-radius: var(--r-lg); padding: 16px;
-    background: linear-gradient(165deg, #183a74, #0f2650 60%, #0a1b3a); box-shadow: 0 10px 26px #0009; }
-.sv-tc::after { display: none; }
-.sv-kicker { letter-spacing: .1em; color: var(--gold2); opacity: .85; }
-.sv-av { border-radius: 12px; border-width: 1px; }
-.sv-name { font-size: 19px; }
-.sv-pts { border-radius: var(--r-md); background: #06122b80; border-color: #ffffff1f; }
-.sv-pts b { font-size: 24px; }
-.sv-badge { border-radius: var(--r-md); background: #ffffff0d; border-color: #ffffff22; }
-.sv-ms span { width: 26px; height: 26px; box-shadow: none; border-width: 1px; }
-.sv-box { border-radius: var(--r-lg); background: var(--card); }
-.sv-btn { border-radius: var(--r-md); background: #ffffff0f; }
-.sv-btn.gold { box-shadow: 0 2px 0 #b8860b; }
+/* ===== hàng "Bán nhanh": các nút cùng chiều cao, nút nguy hiểm ở cuối rõ hơn ===== */
+.sell .sv-btn { padding: 7px 13px; }
+.sell .sv-btn.danger { background: #ef44441a; }
 
-/* ===== tab / điều hướng ===== */
-.sv-tabs { gap: 8px; }
-.sv-tab { border-radius: var(--r-md); padding: 8px 16px; background: var(--card); }
-.sv-tab.on, .sv-nav .on { box-shadow: none; }
-.sv-nav { border-radius: var(--r-lg); background: var(--card); padding: 4px; gap: 2px; }
-.sv-nav button { border-radius: var(--r-md); font-size: 12.5px; }
+/* ===== tab độ hiếm của binder ===== */
+.sv-itab { transition: transform .2s ease, opacity .2s ease, filter .2s; }
+.sv-itab.on { filter: drop-shadow(0 -2px 6px #ffffff33); }
 
-/* ===== chip, thanh bộ, thanh công cụ ===== */
-.sv-chips { gap: 6px; }
-.sv-chip { border-radius: var(--r-md); padding: 6px 12px; background: var(--card); }
-.sv-chip.on { background: #ffcb0520; border-color: #ffcb05aa; }
-.sv-rail { gap: 12px; padding-bottom: 12px; }
-.sv-set .ic { width: 48px; height: 48px; border-width: 1.5px; }
-.sv-set.on .ic { box-shadow: 0 0 0 2px #ffcb0550; }
-.sv-bar { gap: 8px; padding: 8px 2px; }
-.sv-in, .sv-sel { border-radius: var(--r-md); background: #060d1caa; padding: 7px 11px; }
-.sv-in:focus, .sv-sel:focus { outline: none; border-color: var(--gold); }
-.sv-ham { border-radius: var(--r-lg); background: #ffcb0510; border-color: #ffcb0533; }
-.sell { margin-bottom: 16px; }
+/* ===== lá bài: viền chấm điểm rõ hơn (10 vàng, 9 bạc) và nhãn giá gọn ===== */
+.sv-sl.g10 .sv-slab { box-shadow: 0 0 0 1.5px var(--gold), 0 0 18px #ffcb05aa, inset 0 0 0 1px #ffffffbf; }
+.sv-sl .price { letter-spacing: .02em; }
 
-/* ===== binder: bìa da + đường khâu ===== */
-.sv-itabs { padding: 0 30px; }
-.sv-itab { border-radius: 8px 8px 0 0; padding: 6px 14px 10px; box-shadow: 0 -1px 0 #ffffff55 inset; }
-.sv-frame { border-radius: 20px; padding: 18px;
-    background:
-        repeating-linear-gradient(45deg, #ffffff07 0 2px, transparent 2px 5px),
-        linear-gradient(160deg, var(--c1), var(--c2));
-    box-shadow: 0 28px 56px #000c, 0 2px 0 #ffffff30 inset, 0 -3px 0 #0006 inset; }
-.sv-frame::before { inset: 8px; border: 2px dashed #ffffff55; border-radius: 14px; }   /* đường chỉ khâu */
-
-/* ===== hai trang: giấy tối, mép sách, đổ bóng gần gáy ===== */
-.sv-spread { border-radius: 10px; background: var(--paper);
-    box-shadow: 0 0 0 1px #000c, 0 10px 24px #000b, 3px 3px 0 -1px #1a2540, 6px 6px 0 -2px #121b32; }
-.sv-pg { padding: 20px 18px; min-height: 440px; background: var(--paper); }
-.sv-pg.l { background: linear-gradient(90deg, var(--paper) 70%, #050a16); border-right: 0; }
-.sv-pg.r { background: linear-gradient(270deg, var(--paper) 70%, #050a16); }
-.sv-spine { width: 24px; left: calc(50% - 12px); background: linear-gradient(90deg, transparent, #0009 38%, #000d 50%, #0009 62%, transparent); }
-.sv-ring { height: 11px; width: 46px; left: calc(50% - 23px); background: linear-gradient(#f4f6f9, #9aa3b2 55%, #6b7384); box-shadow: 0 3px 5px #000b, inset 0 1px 0 #fff; }
-
-/* ===== túi đựng bài ===== */
-.sv-grid { gap: 12px; }
-.sv-sl { border-radius: var(--r-sm); background: var(--pocket);
-    box-shadow: inset 0 0 0 1px #ffffff1c, inset 0 -10px 14px -12px #ffffff30; transition: transform .2s ease, box-shadow .2s ease; }
-.sv-sl .card { inset: 4px; }
-.sv-sl:hover { transform: translateY(-3px); }
-.sv-sl:hover .card, .sv-sl:hover .sv-slab { transform: none; }          /* nhấc cả túi thay vì chỉ lá bài */
-.sv-sl:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
-.sv-sl.empty { background: transparent; border: 1px dashed #ffffff18; }
-.sv-sl.empty:hover { transform: none; }
-.sv-sl .price { left: 50%; bottom: 6px; transform: translateX(-50%); padding: 0 7px; font-size: 9.5px; line-height: 15px; background: #02050bd9; }
-.sv-sl .err { border-radius: 3px; }
-
-.sv-empty { min-height: 380px; font-size: 13.5px; }
-.sv-empty a { border-radius: var(--r-md); }
-.sv-cover { border-radius: 4px; transform: rotate(-2deg); }
-
-.sv-nav2 { margin-top: 16px; gap: 18px; }
-.sv-nb { background: var(--card); border-color: var(--brd); }
-.sv-pgno { font-weight: 600; }
-
-/* ===== cửa sổ chi tiết / hộp thoại / thanh chọn / toast ===== */
-.ov { background: #020611e6; backdrop-filter: blur(3px); }
-.ov-box, .dlg-box { border-radius: var(--r-lg); background: var(--card); border-color: #ffffff1f; }
-.bulk { border-radius: var(--r-lg); background: #0e1930f7; }
-.toast { border-radius: var(--r-md); background: var(--card2); }
-
-/* ===== tab phụ ===== */
-.sv-panel { border-radius: var(--r-lg); background: var(--card); }
-.hist-i { border-radius: var(--r-md); background: #ffffff06; }
-.skin { border-radius: var(--r-md); }
-
-/* ===== điện thoại ===== */
-@media (max-width: 960px) { .sv-wrap { gap: 18px; padding-inline: 12px; } }
-@media (max-width: 700px) {
-    .sv-frame { padding: 12px; border-radius: 16px; }
-    .sv-frame::before { inset: 5px; }
-    .sv-pg, .sv-pg.l, .sv-pg.r { background: var(--paper); padding: 12px 10px; }
-    .sv-grid { gap: 8px; }
-    .sv-itabs { padding: 0 14px; }
-    .sv-title { font-size: 21px; }
-}
-
+/* ===== thanh cuộn đồng bộ theme ===== */
+* { scrollbar-width: thin; scrollbar-color: #ffffff33 transparent; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: #ffffff2e; border-radius: 9px; }
+::-webkit-scrollbar-thumb:hover { background: #ffcb0577; }
 /* ===== nút tài khoản + khung đăng nhập (do cloud-auth.js chèn vào, binder.html không có style sẵn) ===== */
 .au-chip > button { font: 800 13px var(--f-display); color: var(--gold2); background: var(--card); border: 1px solid var(--line);
     border-radius: 99px; padding: 6px 14px; cursor: pointer; line-height: 1.2; transition: border-color .15s; }
@@ -138,18 +61,36 @@ body {
 .au-box .primary, .au-go { background: linear-gradient(#ffe27a, #ffcb05); color: #2a1700; border-color: #ffe27a; font-weight: 800; }
 .au-tabs button.on { background: linear-gradient(#ffe27a, #ffcb05); color: #2a1700; border-color: transparent; }
 .au-x { border-radius: 50%; padding: 0; }
+/* ===== trainer card giống mẫu ===== */
+.sv-name { font-size: 25px; color: var(--gold2); text-shadow: 0 2px 0 #0a2a66; }
+.sv-rank { background: #a21cf0; color: #fff; }
 
-/* ===== tiến độ hoàn thành bộ + danh sách lá thiếu ===== */
-.sv-set .pg { width: 54px; height: 4px; margin-top: 1px; border-radius: 9px; background: #ffffff1f; overflow: hidden; }
-.sv-set .pg s { display: block; height: 100%; background: linear-gradient(90deg, var(--gold), #ff9d00); }
-.sv-sum .sv-btn { margin-left: 4px; vertical-align: middle; }
-.miss-box { max-width: 760px; max-height: 88vh; grid-template-rows: auto minmax(0, 1fr) auto; }
-.miss-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 10px; overflow-y: auto; padding-right: 4px; }
-.miss-c { display: grid; gap: 2px; font-size: 10px; text-align: center; color: var(--muted); }
-.miss-c img { width: 100%; aspect-ratio: 63 / 88; object-fit: cover; border-radius: 5px; background: #1a2232; filter: grayscale(1) brightness(.55); opacity: .85; transition: filter .15s; }
-.miss-c:hover img { filter: none; opacity: 1; }
-.miss-c b { color: var(--gold2); font-size: 11px; }
-.miss-c small { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.sv-pts { padding: 10px 14px; border-radius: 12px; }
+.sv-pts b { font-size: 32px; }
 
-/* ví đang nợ */
-.sv-wallet.debt { color: #fca5a5; border-color: #ef444466; }
+.sv-badges { gap: 8px; }
+.sv-badge { flex-direction: row-reverse; justify-content: space-between; align-items: center;
+    padding: 12px 14px; border-radius: 10px; background: #ffffff10; border-color: #ffffff22; }
+.sv-badge b { font-size: 24px; color: var(--gold2); }
+.sv-badge:nth-child(even) b { color: var(--green); }
+.sv-badge span { font: 800 10.5px var(--f-display); letter-spacing: .06em; text-transform: uppercase; color: #dbe7ff; }
+
+/* thành tích dạng chip có chữ */
+.sv-ms span { width: auto; height: auto; display: inline-flex; align-items: center; gap: 5px; padding: 3px 11px;
+    border: 0; border-radius: 99px; box-shadow: none; background: var(--gold2); color: #2a1700; font: 700 11.5px var(--f-display); }
+   /* ô bộ bài: logo hiện trong khung chữ nhật rộng, "Tất cả" vẫn tròn */
+.sv-set { width: 96px; }
+.sv-set b { max-width: 96px; }
+.sv-set .ic { height: 54px; }
+.sv-set .ic:not(.lg) { width: 54px; }
+.sv-set .ic.lg { width: 88px; border-radius: 12px; background: #0c1b38; }
+.sv-set .ic.lg img { object-fit: contain; transform: none; padding: 6px 8px; }
+.sv-set .pg { width: 72px; }/* ===== hộp "Thiếu N lá" ===== */
+.miss-box { max-width: min(920px, 96vw); max-height: calc(100dvh - 32px); grid-template-rows: auto minmax(0, 1fr) auto; }
+.miss-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; overflow-y: auto; padding: 2px 4px 2px 2px; min-height: 0; }
+.miss-c { display: grid; gap: 2px; align-content: start; min-width: 0; }
+.miss-c img { width: 100%; aspect-ratio: 744 / 1039; object-fit: contain; border-radius: 6px; background: #0c1426;
+    opacity: .55; filter: grayscale(.6); transition: opacity .15s, filter .15s; }
+.miss-c:hover img { opacity: 1; filter: none; }
+.miss-c b { font: 700 11px var(--f-display); color: var(--gold2); }
+.miss-c small { font-size: 10.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

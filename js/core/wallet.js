@@ -23,7 +23,8 @@
         else if (s.lock && b >= 0) { delete s.lock; wr(s); }
     }
     const bal = () => { const s = rd(); return r2(CFG.startCash + (s.adj || 0) - (s.cost || 0)); };
-
+// true = được chi `amount` $: cho phép ví âm, nhưng không để nợ vượt hạn mức
+const canAfford = amount => !locked() && r2(bal() - amount) >= -CFG.debtLimit;
     function notify(text) {
         let t = document.getElementById('wlToast');
         if (!t) {
@@ -135,5 +136,5 @@
     }
     root.addEventListener('pack:state', refresh);
     document.addEventListener('DOMContentLoaded', mount);
-    root.Wallet = { cfg: CFG, bal, add, fmt, gate, refresh, notify, sellOf, locked, canBankrupt, bankruptInfo, bankrupt, openDebtDialog };
+    root.Wallet = { cfg: CFG, bal, add, fmt, gate, refresh, notify, sellOf, locked, canBankrupt, bankruptInfo, bankrupt, openDebtDialog, canAfford };
 })(window);

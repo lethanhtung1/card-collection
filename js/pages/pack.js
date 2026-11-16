@@ -141,7 +141,7 @@ const GRADING = {
     tagMult: .8,
     // Điểm TB = base + span × chất lượng tâm. Hạ base/span để 9-10 hiếm, 8-7-6-5 phổ biến (lá tâm đẹp nhất TB ~7.5; lá lệch tâm ~5-6).
     // sd lớn = điểm dao động rộng hơn. Muốn dễ 9/10 hơn thì tăng base (mỗi +0.5 ≈ nhích đỉnh lên ~1 bậc).
-    base: 5.0, span: 2.5, sd: 1.25
+    base: 6.0, span: 2.5, sd: 1.25
 };
 // ERRORS: mỗi lá (mọi độ hiếm) có `chance` bị lỗi; w = trọng số chọn loại lỗi, mult = hệ số nhân giá.
 const ERRORS = {
@@ -153,6 +153,8 @@ const ERRORS = {
         { name: 'In ngược mặt', mult: 5, w: 1 }
     ]
 };
+// Hạn mức nợ tối đa khi chấm điểm (USD): ví được phép âm tới mức này, vượt thì không cho chấm. Chỉnh số ở đây.
+const GRADE_DEBT_LIMIT = 500000000;
 const GRADE_NAME = { 10: 'GEM MT', 9: 'MINT', 8: 'NM-MT', 7: 'NM', 6: 'EX-MT', 5: 'EX' };
 const gradeText = (g, co) => `${co || 'PSA'} ${g} · ${GRADE_NAME[Math.floor(g)] || 'EX'}`;
 function pickW(pairs) {                                   // pairs: [[giá_trị, trọng_số], ...]
@@ -429,7 +431,7 @@ function pickCard(list) {                                   // chọn 1 lá tron
     return list[list.length - 1];
 }
 
-const GOD_PACK_ODDS = 0.001;    // tỉ lệ GOD PACK mỗi pack (0.001 = 1/1000): cả pack toàn lá hiếm nhất
+const GOD_PACK_ODDS = 0.005;    // tỉ lệ GOD PACK mỗi pack (0.001 = 1/1000): cả pack toàn lá hiếm nhất
 const BOX_PACKS = 36;           // 1 hộp = 36 pack: xé từng pack (như thường) hoặc xé nhanh hết số pack còn lại
 let box = null, boxRefresh = () => {};            // box = { left, setId, started } khi đang mở hộp
 
@@ -448,10 +450,96 @@ function updateQuota() {
 }
 setInterval(() => { updateQuota(); if (view === 'stage' && !box) boxRefresh(); }, 1000);   // mỗi giây: đồng hồ đếm ngược + chữ trên nút hộp
 const boxSort = (a, b) => TIERS.indexOf(tierOf(b.rarity)) - TIERS.indexOf(tierOf(a.rarity)) || (usdOf(b) ?? 0) - (usdOf(a) ?? 0);   // lá hiếm/đắt lên đầu
-function godToast() {
-    const d = document.createElement('div'); d.textContent = '🌟 GOD PACK! 🌟';
-    d.style.cssText = 'position:fixed;left:50%;top:18%;transform:translateX(-50%);z-index:130;padding:16px 28px;border-radius:16px;font:900 28px system-ui,sans-serif;color:#2a1700;background:linear-gradient(#fff3b0,#ffcb05);box-shadow:0 0 60px #ffcb05cc,0 16px 40px #000a;pointer-events:none';
-    document.body.append(d); setTimeout(() => d.remove(), 4500);
+(function injectGodCSS() {
+    const RGB = '#ff2d55, #ff9f0a, #ffe600, #30d158, #0af, #5e5ce6, #bf5af2, #ff2d55';       // dải màu RGB (đầu = cuối để chạy vòng liền mạch)
+    const st = document.createElement('style');
+    st.textContent = `
+.god-fx { position: fixed; inset: 0; z-index: 130; pointer-events: none; display: grid; place-items: center; overflow: hidden; animation: god-fade 5s ease forwards; }
+.god-fx::before { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 50% 45%, rgba(110, 80, 255, .32), rgba(0, 0, 0, .78) 70%); }
+.god-rays { position: absolute; left: 50%; top: 45%; width: 170vmax; height: 170vmax; margin: -85vmax 0 0 -85vmax;
+    background: repeating-conic-gradient(from 0deg, rgba(255, 45, 85, .34) 0 6deg, transparent 6deg 12deg, rgba(48, 209, 88, .34) 12deg 18deg, transparent 18deg 24deg, rgba(10, 132, 255, .34) 24deg 30deg, transparent 30deg 36deg);
+    -webkit-mask: radial-gradient(circle, #000 0, transparent 55%); mask: radial-gradient(circle, #000 0, transparent 55%);
+    animation: god-spin 10s linear infinite, god-hue 4s linear infinite; }
+.god-fw { position: absolute; inset: 0; width: 100%; height: 100%; }
+.god-card { position: relative; text-align: center; padding: 0 16px; animation: god-pop .7s cubic-bezier(.2, 1.4, .3, 1) both; }
+.god-title { font: 900 clamp(46px, 12vw, 104px)/1 'Baloo 2', system-ui, sans-serif; letter-spacing: .04em; white-space: nowrap;
+    background: linear-gradient(100deg, ${RGB}); background-size: 200% 100%; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 4px 0 rgba(0, 0, 0, .55)) drop-shadow(0 0 22px rgba(255, 255, 255, .55)); animation: god-flow 2.2s linear infinite; }
+.god-sub { margin-top: 10px; font-weight: 700; font-size: clamp(14px, 3.4vw, 20px); color: #fff; text-shadow: 0 2px 10px #000, 0 0 16px rgba(160, 120, 255, .9); }
+.god-spark { position: absolute; width: var(--s); height: var(--s); background: hsl(var(--h) 100% 72%); clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
+    filter: drop-shadow(0 0 6px hsl(var(--h) 100% 60%)); opacity: 0; animation: god-spark 1.6s ease-in-out var(--d) infinite; }
+.god-tag { position: absolute; top: 0; left: 50%; transform: translateX(-50%); z-index: 200; padding: 4px 16px; border-radius: 999px; font: 800 12.5px/1.4 'Baloo 2', system-ui, sans-serif;
+    letter-spacing: .08em; color: #111; background: linear-gradient(90deg, ${RGB}); background-size: 200% 100%; box-shadow: 0 0 18px rgba(160, 120, 255, .8); pointer-events: none; animation: god-flow 2.4s linear infinite; }
+.sw.is-god .sw-card.top .sw-front { animation: god-glow 3s linear infinite; }
+.rs-god { position: relative; width: 100%; padding: 10px 12px; border-radius: 14px; text-align: center; color: #111; overflow: hidden;
+    background: linear-gradient(110deg, ${RGB}); background-size: 200% 100%; box-shadow: 0 0 26px rgba(150, 110, 255, .6), inset 0 0 0 2px rgba(255, 255, 255, .85); animation: god-flow 2.6s linear infinite; }
+.rs-god b { display: block; font-size: clamp(17px, 3.2vw, 22px); font-weight: 900; letter-spacing: .05em; }
+.rs-god small { display: block; font-size: 11.5px; font-weight: 700; opacity: .8; }
+@keyframes god-fade { 0% { opacity: 0; } 6% { opacity: 1; } 82% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes god-spin { to { transform: rotate(360deg); } }
+@keyframes god-hue { to { filter: hue-rotate(360deg); } }
+@keyframes god-pop { from { transform: scale(.4); opacity: 0; } }
+@keyframes god-flow { to { background-position: 200% 0; } }
+@keyframes god-spark { 0%, 100% { opacity: 0; transform: scale(.3) rotate(0); } 50% { opacity: 1; transform: scale(1) rotate(90deg); } }
+@keyframes god-glow {
+    0%, 100% { box-shadow: 0 0 0 2px #ff2d55, 0 0 34px rgba(255, 45, 85, .75); } 20% { box-shadow: 0 0 0 2px #ffe600, 0 0 34px rgba(255, 230, 0, .75); }
+    40% { box-shadow: 0 0 0 2px #30d158, 0 0 34px rgba(48, 209, 88, .75); } 60% { box-shadow: 0 0 0 2px #0af, 0 0 34px rgba(0, 170, 255, .75); }
+    80% { box-shadow: 0 0 0 2px #bf5af2, 0 0 34px rgba(191, 90, 242, .75); } }
+@media (prefers-reduced-motion: reduce) { .god-rays, .god-title, .god-spark, .god-tag, .rs-god, .sw.is-god .sw-card.top .sw-front { animation: none; } .god-spark { opacity: .7; } .god-fw { display: none; } }`;
+    document.head.append(st);
+})();
+
+// pháo hoa vẽ bằng canvas: tên lửa bay lên rồi nổ thành các tia nhiều màu (đủ sắc cầu vồng), có đuôi mờ dần
+function godFireworks(cv, stopAt) {
+    const ctx = cv.getContext('2d'), dpr = Math.min(2, window.devicePixelRatio || 1);
+    let W = 0, H = 0, last = performance.now(), nextLaunch = 0;
+    const fit = () => { W = cv.width = Math.round(innerWidth * dpr); H = cv.height = Math.round(innerHeight * dpr); };
+    fit();
+    const rockets = [], parts = [], rnd = (a, b) => a + Math.random() * (b - a);
+    function launch() {
+        const ty = H * rnd(.14, .45), t = rnd(.55, .8);
+        rockets.push({ x: W * rnd(.12, .88), y: H, vx: rnd(-40, 40) * dpr, vy: -(H - ty) / t, ty, hue: rnd(0, 360) });
+    }
+    function burst(x, y, hue) {
+        const n = Math.round(rnd(70, 110)), rainbow = Math.random() < .45;               // 45% quả nổ đủ cầu vồng, còn lại 1 tông màu
+        for (let i = 0; i < n; i++) {
+            const a = Math.PI * 2 * i / n + rnd(-.05, .05), sp = rnd(90, 300) * dpr;
+            parts.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 1, decay: rnd(.5, 1.0), size: rnd(1.4, 3.2) * dpr,
+                hue: rainbow ? (i / n) * 360 : hue + rnd(-25, 25) });
+        }
+    }
+    function frame(now) {
+        if (!cv.isConnected) return;
+        const dt = Math.min(.04, (now - last) / 1000); last = now;
+        ctx.globalCompositeOperation = 'destination-out'; ctx.fillStyle = 'rgba(0,0,0,.2)'; ctx.fillRect(0, 0, W, H);   // đuôi mờ dần
+        ctx.globalCompositeOperation = 'lighter';
+        if (now < stopAt && now >= nextLaunch) { launch(); if (Math.random() < .5) launch(); nextLaunch = now + rnd(200, 420); }
+        for (let i = rockets.length - 1; i >= 0; i--) {
+            const r = rockets[i]; r.x += r.vx * dt; r.y += r.vy * dt;
+            ctx.fillStyle = `hsl(${r.hue} 100% 75%)`; ctx.beginPath(); ctx.arc(r.x, r.y, 2.2 * dpr, 0, 6.2832); ctx.fill();
+            if (r.y <= r.ty) { burst(r.x, r.y, r.hue); rockets.splice(i, 1); }
+        }
+        for (let i = parts.length - 1; i >= 0; i--) {
+            const q = parts[i];
+            q.vy += 240 * dpr * dt; q.vx *= .985; q.vy *= .985; q.x += q.vx * dt; q.y += q.vy * dt; q.life -= q.decay * dt;
+            if (q.life <= 0) { parts.splice(i, 1); continue; }
+            ctx.fillStyle = `hsla(${q.hue},100%,62%,${q.life.toFixed(2)})`; ctx.beginPath(); ctx.arc(q.x, q.y, q.size * (.5 + q.life * .6), 0, 6.2832); ctx.fill();
+        }
+        if (now < stopAt + 2000 || parts.length || rockets.length) requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+}
+
+function godToast() {                           // GOD PACK: tia sáng + chữ RGB + pháo hoa, toàn màn hình, không chặn thao tác, tự tắt sau ~5 giây
+    const old = document.getElementById('godFx'); if (old) old.remove();
+    const n = pack && pack._subs ? pack._subs.filter(x => x._god).length : 1;
+    const sparks = Array.from({ length: 22 }, () => `<i class="god-spark" style="left:${(Math.random() * 100).toFixed(1)}%;top:${(Math.random() * 100).toFixed(1)}%;--d:${(Math.random() * 1.8).toFixed(2)}s;--s:${Math.round(6 + Math.random() * 12)}px;--h:${Math.round(Math.random() * 360)}"></i>`).join('');
+    const el = document.createElement('div');
+    el.id = 'godFx'; el.className = 'god-fx'; el.setAttribute('role', 'status');
+    el.innerHTML = `<div class="god-rays"></div><canvas class="god-fw"></canvas>${sparks}<div class="god-card"><div class="god-title">GOD PACK!</div><div class="god-sub">${n > 1 ? '× ' + n + ' · ' : ''}Cả pack toàn lá hiếm nhất 🌟</div></div>`;
+    document.body.append(el);
+    if (!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) godFireworks(el.querySelector('.god-fw'), performance.now() + 3600);
+    setTimeout(() => el.remove(), 5050);
 }
 function godPack(pool, config) {            // toàn bộ lá lấy từ các hạng cao nhất (epic trở lên; bộ không có thì lấy 2 hạng cao nhất)
     const n = config.reduce((s, [c]) => s + c, 0), have = TIERS.filter(t => pool[t] && pool[t].length);
@@ -1234,7 +1322,7 @@ const swVib = p => { try { navigator.vibrate && navigator.vibrate(p); } catch (e
 function swBuild() {
     const old = $('#sw'); if (old) old.remove();
     const root = document.createElement('div');
-    root.id = 'sw'; root.className = 'sw';
+    root.id = 'sw'; root.className = 'sw' + (pack._god ? ' is-god' : '');
     swEls = pack.map((card, i) => {
         const t = tierOf(card.rarity);
         const el = document.createElement('div');
@@ -1247,6 +1335,7 @@ function swBuild() {
         root.append(el);
         return el;
     });
+    if (pack._god) { const gt = document.createElement('div'); gt.className = 'god-tag'; gt.textContent = '🌟 GOD PACK'; root.append(gt); }
     const hint = document.createElement('div'); hint.className = 'sw-hint';
     hint.textContent = 'Vuốt lá theo hướng nào cũng được · giữ kéo từ từ để xem lá bên dưới';
     root.append(hint);
@@ -1624,9 +1713,11 @@ function renderSummary() {
     const collN = Object.values(readLS(COLL_KEY, {})).reduce((s, n) => s + n, 0);
     const bi = pack.indexOf(best), rcOf = c => TIER_COLOR[tierOf(c.rarity)];
 
+    const godN = pack._subs ? pack._subs.filter(x => x._god).length : (pack._god ? 1 : 0);
     // ----- cột trái -----
     const left = `<div class="rs-left">
         <div class="rs-kicker">KẾT QUẢ ${pack._subs && pack._subs.length > 1 ? pack._subs.length + ' PACK' : 'PACK'}</div>
+        ${godN ? `<div class="rs-god"><b>🌟 GOD PACK${godN > 1 ? ' ×' + godN : ''} 🌟</b><small>Cả pack toàn lá hiếm nhất</small></div>` : ''}
         <h2 class="rs-title">${esc(summaryTitle(best))}</h2>
         ${hasPrice
             ? `<div class="rs-score ${pos ? 'pos' : 'neg'}"><small>${pos ? 'CỘNG ĐIỂM' : 'TRỪ ĐIỂM'}</small><b>${sgn(net)}</b><em>Điểm <s>${money(sumRes.before, 'USD')}</s> → <b>${money(after, 'USD')}</b></em></div>`
@@ -1845,7 +1936,8 @@ function doGrade() {
     if (!gState || gState.busy) return;
     gState.busy = true;
     const { c, co } = gState, fee = GRADING.fee[co], before = usdOf(c);
-    if (window.Wallet && Wallet.bal() < fee) { gState.busy = false; Wallet.notify(`Không đủ tiền chấm: cần ${Wallet.fmt(fee)}, ví còn ${Wallet.fmt(Wallet.bal())}. Bán bớt lá ở Bộ sưu tập.`); return; }
+    // cho chấm khi ví đang âm (vẫn trừ phí), miễn nợ sau khi trừ không vượt GRADE_DEBT_LIMIT
+    if (window.Wallet && Wallet.bal() - fee < -GRADE_DEBT_LIMIT) { gState.busy = false; Wallet.notify(`Vượt hạn mức nợ khi chấm: ví còn ${Wallet.fmt(Wallet.bal())}, trừ phí ${Wallet.fmt(fee)} sẽ nợ quá ${Wallet.fmt(GRADE_DEBT_LIMIT)}. Bán bớt lá ở Bộ sưu tập.`); return; }
     $('#gradeBody').innerHTML = `<div class="g-wait"><div class="g-spin"></div><b>Đang gửi ${co} chấm điểm…</b><small>Kiểm tra lề · góc · cạnh · bề mặt</small></div>`;
     setTimeout(() => {
         const g = rollGrade(c, co);
